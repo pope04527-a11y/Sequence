@@ -4,7 +4,7 @@ const TaskRecordsContext = createContext();
 
 export const TaskRecordsProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
-  const BASE_URL = "http://localhost:3002";
+  const BASE_URL = "https://stacksapp-backend-main.onrender.com";
 
   // Fetch records from backend
   const fetchTaskRecords = async () => {
