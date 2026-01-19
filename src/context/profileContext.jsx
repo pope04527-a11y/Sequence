@@ -5,7 +5,7 @@ const ProfileContext = createContext();
 export const ProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const BASE_URL = "http://localhost:3002";
+  const BASE_URL = "https://stacksapp-backend-main.onrender.com";
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("authToken");
