@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
 
 // Public pages
 import Login from "../pages/Login.jsx";
