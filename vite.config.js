@@ -15,7 +15,7 @@ export default defineConfig({
     // This ensures fetch('/api/...') calls go to http://localhost:3002 without CORS issues.
     proxy: {
       '/api': {
-        target: 'http://localhost:3002',
+        target: 'https://stacksapp-backend-main.onrender.com',
         changeOrigin: true,
         secure: false,
         // preserve path (no rewrite needed) but shown here for clarity if you want to strip prefix:
