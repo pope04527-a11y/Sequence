@@ -16,7 +16,7 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Send devUsername in the request body (avoids CORS preflight for custom headers).
 */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dhubpqnss/image/upload/v1748650920/products/";
 const imageStart = 42;
