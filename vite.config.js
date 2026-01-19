@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     // Proxy all /api requests to your local backend during development.
-    // This ensures fetch('/api/...') calls go to http://localhost:3002 without CORS issues.
+    // This ensures fetch('/api/...') calls go to https://stacksapp-backend-main.onrender.com without CORS issues.
     proxy: {
       '/api': {
         target: 'https://stacksapp-backend-main.onrender.com',
