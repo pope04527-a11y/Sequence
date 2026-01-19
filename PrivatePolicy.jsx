@@ -17,7 +17,7 @@ export default function PrivatePolicy() {
         color: "#111",
         minHeight: "100%",
         boxSizing: "border-box",
-        padding: "28px 20px",
+        padding: "28px 21px",
         display: "flex",
         justifyContent: "center",
       }}
