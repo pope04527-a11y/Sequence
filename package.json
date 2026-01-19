@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "echo '--- dist listing ---' && ls -la dist || true",
+    "postbuild": "cp public/_redirects dist/_redirects || true && echo '--- dist listing ---' && ls -la dist || true",
     "start": "vite"
   },
   "dependencies": {
