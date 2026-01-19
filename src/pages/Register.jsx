@@ -143,7 +143,7 @@ function SpinnerOverlay({ duration = 500, onDone }) {
   );
 }
 
-const API_URL = "http://localhost:3002";
+const API_URL = "https://stacksapp-backend-main.onrender.com";
 
 export default function Register() {
   const navigate = useNavigate();
