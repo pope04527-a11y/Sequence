@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "echo '--- dist listing ---' && ls -la dist || true",
     "start": "vite"
   },
   "dependencies": {
@@ -22,4 +23,3 @@
     "vite": "^5.4.19"
   }
 }
-
