@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const RENDER_BACKEND_URL = "http://localhost:3002";
+const RENDER_BACKEND_URL = "https://stacksapp-backend-main.onrender.com";
 
 export default function NotificationBell() {
   const [unread, setUnread] = useState(false);
