@@ -9,7 +9,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Use production backend
-  const BASE_URL = "http://localhost:3002";
+  const BASE_URL = "https://stacksapp-backend-main.onrender.com";
 
   // Load user from localStorage first, then refresh from backend
   useEffect(() => {
@@ -62,3 +62,4 @@ export const UserProvider = ({ children }) => {
     </UserContext.Provider>
   );
 };
+
