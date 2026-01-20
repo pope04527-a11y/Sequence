@@ -168,9 +168,12 @@ export default function Login({ refreshRecords }) {
       const data = await res.json();
 
       if (data.success) {
+        // Store user information and token under the key 'token' so other parts of the app
+        // (e.g. Tasks.jsx) can read it consistently.
         localStorage.setItem("currentUser", JSON.stringify(data.user));
         localStorage.setItem("user", data.user.username);
         localStorage.setItem("authToken", data.user.token);
+        localStorage.setItem("token", data.user.token); // ensure compatibility with other modules
         setFadeMsg("Login Success");
         if (typeof refreshRecords === "function") {
           refreshRecords();
