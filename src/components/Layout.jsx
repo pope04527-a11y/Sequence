@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import Sidebar from "./Sidebar";
+import CustomerServiceModal from "./CustomerServiceModal.jsx";
 
 /*
   Layout.jsx
@@ -250,6 +251,7 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [csOpen, setCsOpen] = useState(false);
 
   // disable hamburger on auth pages
   const noHamburgerRoutes = ["/login", "/register"];
@@ -261,6 +263,16 @@ export default function Layout() {
       window.scrollTo({ top: 0, behavior: "auto" });
     } catch (e) {}
   }, [location.pathname]);
+
+  /* Listen for global "openCustomerService" events so the CustomerServiceModal can be shown as an overlay
+     without navigating away from the current page. */
+  useEffect(() => {
+    function onOpenCs() {
+      setCsOpen(true);
+    }
+    window.addEventListener("openCustomerService", onOpenCs);
+    return () => window.removeEventListener("openCustomerService", onOpenCs);
+  }, []);
 
   /* Intercept internal product anchor clicks, capture product data from DOM,
      then navigate via react-router passing the product in location.state and
@@ -377,6 +389,11 @@ export default function Layout() {
       <main className="layout-content" style={{ flex: 1 }}>
         {productId ? <ProductPage product={productToRender} /> : <Outlet />}
       </main>
+
+      {/* CustomerServiceModal mounted at Layout level so it overlays the current page (prevents navigating to a separate /customer-service page).
+          The modal opens when Footer dispatches the "openCustomerService" event or when the modal's open state is set here.
+      */}
+      <CustomerServiceModal open={csOpen} onClose={() => setCsOpen(false)} />
 
       {/* Footer */}
       <Footer />
