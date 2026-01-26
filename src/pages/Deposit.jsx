@@ -189,10 +189,10 @@ export default function Deposit() {
             <div className="deposit-remarks">
               <div style={{ fontWeight: 700, marginBottom: 8 }}>Recharge remark:</div>
               <ol style={{ margin: 0, paddingLeft: 100 }}>
-                <li>1.Receiving account: Account Funds</li>
-                <li>2.The deposit will be credited and available for trading once you receive confirmation from customer support.</li>
-                <li>3.Please make sure your selected coins and network are correct before sending any funds to the deposit address provided by customer support. Sending funds over an incorrect network or in different coins will result in the loss of your assets, which cannot be retrieved.</li>
-                <li>4.Please contact our customer service to request the latest deposit address.</li>
+        <li>1.Receiving account: Account Funds</li>
+        <li>2.The deposit will be credited and available for trading once you receive confirmation from customer support.</li>
+        <li>3.Please make sure your selected coins and network are correct before sending any funds to the deposit address provided by customer support. Sending funds over an incorrect network or in different coins will result in the loss of your assets, which cannot be retrieved.</li>
+        <li>4.Please contact our customer service to request the latest deposit address.</li>
               </ol>
             </div>
           </div>
