@@ -14,6 +14,8 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Make the top progress line fully green across the page (fill spans 100%).
   - Use API_BASE (http://localhost:3002 by default).
   - Send devUsername in the request body (avoids CORS preflight for custom headers).
+  - "Chat with us" link in the support block now opens the Customer Service modal (dispatches openCustomerService)
+    instead of navigating to a page.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -770,7 +772,21 @@ export default function Tasks() {
               <p style={{ marginBottom: 6 }}>Our dedicated team is available to answer all your questions.</p>
               <p style={{ marginBottom: 6 }}>Everyday, 10:00 to 21:59.</p>
               <p style={{ marginBottom: 6 }}>If you get in touch outside of these hours we will aim to respond to you as quickly as possible the next working day.</p>
-              <p><strong>Customer Service:</strong> <span style={{ color: "#ff4d4d" }}>Chat with us</span></p>
+              <p>
+                <strong>Customer Service:</strong>{" "}
+                <a
+                  href="#chat"
+                  onClick={(e) => {
+                    if (e && typeof e.preventDefault === "function") e.preventDefault();
+                    try {
+                      window.dispatchEvent(new CustomEvent("openCustomerService"));
+                    } catch (err) {}
+                  }}
+                  style={{ color: "#ff4d4d", cursor: "pointer" }}
+                >
+                  Chat with us
+                </a>
+              </p>
             </div>
           </div>
         </div>
