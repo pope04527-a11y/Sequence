@@ -52,6 +52,7 @@ import Logout from "../pages/Logout.jsx"; // <-- ADDED import
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Layout from "../components/Layout.jsx";
 import Footer from "../components/Footer.jsx"; // add global Footer to show on Dashboard
+import CustomerServiceModal from "../components/CustomerServiceModal.jsx"; // <-- NEW import for modal component
 
 /*
   ProductWrapper
@@ -72,6 +73,25 @@ function ProductWrapper() {
     }
     // Keep user on same route; Layout's ProductModal will display the product.
   }, [id]);
+
+  return null;
+}
+
+/*
+  CustomerServiceWrapper
+  - Lightweight component that opens the global customer service modal by dispatching the "openCustomerService" CustomEvent.
+  - Public route so it doesn't trigger auth redirects when opened.
+  - We dispatch the event and keep the user on the same route; a globally mounted CustomerServiceModal
+    (for example in Layout) should listen for "openCustomerService" and display itself.
+*/
+function CustomerServiceWrapper() {
+  useEffect(() => {
+    try {
+      window.dispatchEvent(new CustomEvent("openCustomerService"));
+    } catch (e) {
+      // noop
+    }
+  }, []);
 
   return null;
 }
@@ -246,6 +266,9 @@ export default function AppRoutes() {
           <Route path="/furniture/:id" element={<ProductWrapper />} />
           <Route path="/commodities/:id" element={<ProductWrapper />} />
           <Route path="/watches/:id" element={<ProductWrapper />} />
+
+          {/* Customer Service route - public wrapper will trigger the modal */}
+          <Route path="/customer-service" element={<CustomerServiceWrapper />} />
 
           {/* Password update routes */}
           <Route path="/update-password" element={<UpdatePassword />} />
