@@ -32,6 +32,15 @@ export default function Deposit() {
     refreshProfile && refreshProfile();
   }, [refreshProfile]);
 
+  const handleOpenCustomerService = (e) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    try {
+      window.dispatchEvent(new CustomEvent("openCustomerService"));
+    } catch (err) {
+      // noop
+    }
+  };
+
   return (
     <main style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
       <style>{`
@@ -122,7 +131,7 @@ export default function Deposit() {
           color: #fff;
         }
         .welcome-section p { margin: 8px 0; color: rgba(255,255,255,0.88); }
-        .chat-link { color: #ff4d4d; font-weight: 700; }
+        .chat-link { color: #ff4d4d; font-weight: 700; cursor: pointer; }
 
         .deposit-remarks {
           margin-top: 22px;
@@ -174,16 +183,16 @@ export default function Deposit() {
               <p>Our dedicated team is available to answer all your questions.</p>
               <p>Everyday, 10:00 to 21:59.</p>
               <p>If you get in touch outside of these hours we will aim to respond to you as quickly as possible the next working day.</p>
-              <p><strong>🧑‍💻 Customer Service:</strong> <span className="chat-link">Chat with us</span></p>
+              <p><strong>Customer Service:</strong> <a href="#chat" onClick={handleOpenCustomerService} className="chat-link">Chat with us</a></p>
             </div>
 
             <div className="deposit-remarks">
               <div style={{ fontWeight: 700, marginBottom: 8 }}>Recharge remark:</div>
               <ol style={{ margin: 0, paddingLeft: 100 }}>
-                <li>1.    Receiving account: Account Funds</li>
-                <li>2.    The deposit will be credited and available for trading once you receive confirmation from customer support.</li>
-                <li>3.    Please make sure your selected coins and network are correct before sending any funds to the deposit address provided by customer support. Sending funds over an incorrect network or in different coins will result in the loss of your assets, which cannot be retrieved.</li>
-                <li>4.    Please contact our customer service to request the latest deposit address.</li>
+                <li>1.Receiving account: Account Funds</li>
+                <li>2.The deposit will be credited and available for trading once you receive confirmation from customer support.</li>
+                <li>3.Please make sure your selected coins and network are correct before sending any funds to the deposit address provided by customer support. Sending funds over an incorrect network or in different coins will result in the loss of your assets, which cannot be retrieved.</li>
+                <li>4.Please contact our customer service to request the latest deposit address.</li>
               </ol>
             </div>
           </div>
