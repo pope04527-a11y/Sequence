@@ -5,8 +5,7 @@ import menuIcon from "../assets/images/header/menu.svg";
 import refreshIcon from "../assets/images/header/logout.svg";
 import chatIcon from "../assets/images/header/chat.png";
 import "./Login.css";
-import CustomerServiceModal from "../components/CustomerServiceModal.jsx";
-
+import Footer from "../components/Footer.jsx"; // import shared Footer
 
 // HEADER (identical to screenshot)
 function Header() {
@@ -21,95 +20,6 @@ function Header() {
         <img src={refreshIcon} alt="Refresh" className="header-icon" />
       </div>
     </header>
-  );
-}
-
-// FOOTER (identical to screenshot, but links disabled except Customer Service and Terms & Conditions)
-function Footer() {
-  const [csOpen, setCsOpen] = useState(false);
-
-  const handleOpenCustomerService = (e) => {
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-    setCsOpen(true);
-    try {
-      window.dispatchEvent(new CustomEvent("openCustomerService"));
-    } catch (err) {
-      // noop
-    }
-  };
-
-  // Reusable disabled link style to keep visual parity but disable interaction
-  const disabledLinkStyle = {
-    display: "block",
-    color: "inherit",
-    textDecoration: "none",
-    marginBottom: "0.5rem",
-    pointerEvents: "none",
-    cursor: "default",
-    opacity: 1,
-  };
-
-  const activeLinkStyle = {
-    display: "block",
-    fontSize: "0.9rem",
-    textDecoration: "none",
-    marginBottom: "0.5rem",
-  };
-
-  return (
-    <footer className="footer">
-      <div className="footer-main">
-        <div className="footer-logo-row">
-          <img src={logo} alt="Sequence Logo" className="footer-logo" />
-          <span className="footer-logo-text">sequence</span>
-        </div>
-        <div className="footer-about">
-          We are a leading marketing agency that utilizes over 10 years of proprietary data and insights, combined with a team of 70+ expert marketers.<br />
-          Join over 4,000 marketers who receive weekly digital marketing tips tailored for industries like electronics, household goods, and many more.
-        </div>
-        <div className="footer-links-row" aria-label="Footer links">
-          <div>
-            <div className="footer-section-title">COMPANY</div>
-            <span style={disabledLinkStyle}>About Us</span>
-            <span style={disabledLinkStyle}>Join Us</span>
-            <span style={disabledLinkStyle}>Contact Us</span>
-            <span style={disabledLinkStyle}>Premium Membership</span>
-            <span style={disabledLinkStyle}>Company Certificate</span>
-          </div>
-          <div>
-            <div className="footer-section-title">INFORMATION</div>
-            <span style={disabledLinkStyle}>Privacy Policy</span>
-            {/* Terms & Conditions remains active */}
-            <Link to="/TermsAndConditions" style={activeLinkStyle}>
-              Terms and Conditions
-            </Link>
-            <span style={disabledLinkStyle}>FAQs</span>
-            <span style={disabledLinkStyle}>Latest Events</span>
-          </div>
-        </div>
-        <div className="footer-copyright-row">
-          <span className="footer-copyright">
-            <img src={logo} alt="Sequence Logo small" className="footer-logo-small" />
-            &copy; 2025 - Sequence Commerce
-          </span>
-        </div>
-      </div>
-
-      {/* Floating chat button - active */}
-      <a
-        href="/customer-service"
-        onClick={handleOpenCustomerService}
-        className="footer-chat-btn"
-        title="Customer Service"
-        aria-label="Contact customer service"
-        style={{ position: "fixed", right: 8, bottom: 60, width: 60, height: 60, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%" }}
-      >
-        <img src={chatIcon} alt="Chat Icon" />
-      </a>
-
-      {/* Local modal so chat works on login page without importing the shared Footer component */}
-      <CustomerServiceModal open={csOpen} onClose={() => setCsOpen(false)} />
-    </footer>
   );
 }
 
@@ -307,7 +217,32 @@ export default function Login({ refreshRecords }) {
           </div>
         </section>
       </main>
-      <Footer />
+
+      {/* Render shared Footer but disable all clickable elements on the footer for the login page
+          except the floating chat button. We do this by wrapping Footer in a wrapper and injecting
+          a small style which disables pointer-events for all descendants except .footer-chat-btn. */}
+      <div className="login-footer-wrapper">
+        <style>
+          {`
+            /* disable all interactions within the footer on the login page */
+            .login-footer-wrapper .footer * {
+              pointer-events: none !important;
+            }
+            /* enable interaction for the floating chat button and its children */
+            .login-footer-wrapper .footer .footer-chat-btn,
+            .login-footer-wrapper .footer .footer-chat-btn * {
+              pointer-events: auto !important;
+              cursor: pointer;
+            }
+            /* ensure the chat button remains above any overlay */
+            .login-footer-wrapper .footer .footer-chat-btn {
+              z-index: 9999;
+            }
+          `}
+        </style>
+
+        <Footer />
+      </div>
     </div>
   );
 }
