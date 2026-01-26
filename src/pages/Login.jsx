@@ -219,8 +219,9 @@ export default function Login({ refreshRecords }) {
       </main>
 
       {/* Render shared Footer but disable all clickable elements on the footer for the login page
-          except the floating chat button. We do this by wrapping Footer in a wrapper and injecting
-          a small style which disables pointer-events for all descendants except .footer-chat-btn. */}
+          except the floating chat button. Also allow interaction for the customer service modal
+          rendered inside the Footer by enabling pointer-events for [role="dialog"] so modal buttons
+          are clickable and don't fall through to the page beneath. */}
       <div className="login-footer-wrapper">
         <style>
           {`
@@ -228,15 +229,27 @@ export default function Login({ refreshRecords }) {
             .login-footer-wrapper .footer * {
               pointer-events: none !important;
             }
+
             /* enable interaction for the floating chat button and its children */
             .login-footer-wrapper .footer .footer-chat-btn,
             .login-footer-wrapper .footer .footer-chat-btn * {
               pointer-events: auto !important;
               cursor: pointer;
             }
-            /* ensure the chat button remains above any overlay */
+
+            /* enable interaction for the customer service modal (mounted inside footer) */
+            .login-footer-wrapper .footer [role="dialog"],
+            .login-footer-wrapper .footer [role="dialog"] * {
+              pointer-events: auto !important;
+              cursor: auto;
+            }
+
+            /* ensure the chat button and modal overlay sit above other things */
             .login-footer-wrapper .footer .footer-chat-btn {
-              z-index: 9999;
+              z-index: 10001;
+            }
+            .login-footer-wrapper .footer [role="dialog"] {
+              z-index: 10002;
             }
           `}
         </style>
