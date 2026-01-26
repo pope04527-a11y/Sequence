@@ -1,9 +1,10 @@
 // src/components/Layout.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import Sidebar from "./Sidebar";
+import CustomerServiceModal from "./CustomerServiceModal.jsx";
 
 /*
   Layout.jsx
@@ -251,6 +252,10 @@ export default function Layout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // state & ref for customer service modal
+  const [csOpen, setCsOpen] = useState(false);
+  const prevPathRef = useRef(null);
+
   // disable hamburger on auth pages
   const noHamburgerRoutes = ["/login", "/register"];
   const disableMenu = noHamburgerRoutes.includes(location.pathname);
@@ -260,6 +265,33 @@ export default function Layout() {
     try {
       window.scrollTo({ top: 0, behavior: "auto" });
     } catch (e) {}
+  }, [location.pathname]);
+
+  /* Listen for the global 'openCustomerService' event and open the modal.
+     Record the previous pathname so we can return when the modal is closed. */
+  useEffect(() => {
+    function onOpenCustomerService() {
+      // store previous path if not already on the customer-service route
+      if (location.pathname !== "/customer-service") {
+        prevPathRef.current = location.pathname;
+      }
+      setCsOpen(true);
+    }
+
+    window.addEventListener("openCustomerService", onOpenCustomerService);
+    return () => window.removeEventListener("openCustomerService", onOpenCustomerService);
+    // location is purposefully read here to snapshot previous path at event time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  /* If user navigates directly to /customer-service, ensure modal opens */
+  useEffect(() => {
+    if (location.pathname === "/customer-service") {
+      // if we don't already have a prev path recorded, set it to root as fallback
+      if (!prevPathRef.current) prevPathRef.current = "/";
+      setCsOpen(true);
+    }
+    // do not auto-close modal when navigating away in other cases; the modal's onClose will handle navigation back
   }, [location.pathname]);
 
   /* Intercept internal product anchor clicks, capture product data from DOM,
@@ -377,6 +409,33 @@ export default function Layout() {
       <main className="layout-content" style={{ flex: 1 }}>
         {productId ? <ProductPage product={productToRender} /> : <Outlet />}
       </main>
+
+      {/* Global Customer Service Modal mounted here so it always renders as an overlay.
+          The modal opens when:
+            - a "openCustomerService" event is dispatched (Footer or other UI)
+            - the current route is /customer-service (direct navigation)
+          When the modal is closed we navigate back to the previous path if we opened it via the /customer-service route.
+      */}
+      <CustomerServiceModal
+        open={csOpen}
+        onClose={() => {
+          setCsOpen(false);
+          try {
+            if (location.pathname === "/customer-service") {
+              // prefer navigating back to the recorded previous path if available
+              if (prevPathRef.current) {
+                navigate(prevPathRef.current, { replace: true });
+              } else {
+                navigate(-1);
+              }
+            }
+          } catch (e) {
+            // noop
+          } finally {
+            prevPathRef.current = null;
+          }
+        }}
+      />
 
       {/* Footer */}
       <Footer />
