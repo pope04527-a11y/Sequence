@@ -201,7 +201,7 @@ export default function Footer() {
             style={footerLogoSmallStyle}
           />
           <span style={{ ...copyrightTextStyle, display: "inline-block", verticalAlign: "middle" }}>
-            &copy; 2025 - Sequence Commerce
+            &copy; 2026 - Sequence Commerce
           </span>
         </div>
       </div>
