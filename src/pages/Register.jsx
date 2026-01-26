@@ -289,7 +289,10 @@ export default function Register() {
               />
               <label htmlFor="agreed" className="register-checkbox-label">
                 By registering, your account will be subject to the&nbsp;
-                <a href="#" className="login-link">Terms and Conditions</a>
+                {/* Link to the public Terms page and preserve the return path so the browser back/return button goes back to Register */}
+                <Link to="/terms" state={{ from: "/register" }} className="login-link">
+                  Terms and Conditions
+                </Link>
               </label>
             </div>
             <button type="submit" className="login-btn">
@@ -302,7 +305,7 @@ export default function Register() {
         </section>
       </main>
 
-      {/* Render shared Footer but disable all clickable elements on the footer for the register page
+      {/* Render shared Footer but disable all clickable elements on the register page
           except the floating chat button. Also allow interaction for the customer service modal
           rendered inside the Footer by enabling pointer-events for [role="dialog"] so modal buttons
           are clickable and don't fall through to the page beneath. */}
