@@ -5,6 +5,7 @@ import menuIcon from "../assets/images/header/menu.svg";
 import refreshIcon from "../assets/images/header/logout.svg";
 import chatIcon from "../assets/images/header/chat.png";
 import "./Register.css";
+import Footer from "../components/Footer.jsx"; // use shared Footer (same approach as Login.jsx)
 
 // HEADER (identical to Login page)
 function Header() {
@@ -19,50 +20,6 @@ function Header() {
         <img src={refreshIcon} alt="Refresh" className="header-icon" />
       </div>
     </header>
-  );
-}
-
-// FOOTER (identical to Login page)
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-main">
-        <div className="footer-logo-row">
-          <img src={logo} alt="Sequence Logo" className="footer-logo" />
-          <span className="footer-logo-text">sequence</span>
-        </div>
-        <div className="footer-about">
-          We are a leading marketing agency that utilizes over 10 years of proprietary data and insights, combined with a team of 70+ expert marketers.<br />
-          Join over 4,000 marketers who receive weekly digital marketing tips tailored for industries like electronics, household goods, and many more.
-        </div>
-        <div className="footer-links-row">
-          <div>
-            <div className="footer-section-title">COMPANY</div>
-            <a href="#">About Us</a>
-            <a href="#">Join Us</a>
-            <a href="#">Contact Us</a>
-            <a href="#">Premium Membership</a>
-            <a href="#">Company Certificate</a>
-          </div>
-          <div>
-            <div className="footer-section-title">INFORMATION</div>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms and Conditions</a>
-            <a href="#">FAQs</a>
-            <a href="#">Latest Events</a>
-          </div>
-        </div>
-        <div className="footer-copyright-row">
-          <span className="footer-copyright">
-            <img src={logo} alt="Sequence Logo small" className="footer-logo-small" />
-            &copy; 2025 - Sequence Commerce
-          </span>
-        </div>
-      </div>
-      <a href="mailto:support@sequence.com" className="footer-chat-btn" title="Customer Service">
-        <img src={chatIcon} alt="Chat Icon" />
-      </a>
-    </footer>
   );
 }
 
@@ -344,7 +301,45 @@ export default function Register() {
           </form>
         </section>
       </main>
-      <Footer />
+
+      {/* Render shared Footer but disable all clickable elements on the footer for the register page
+          except the floating chat button. Also allow interaction for the customer service modal
+          rendered inside the Footer by enabling pointer-events for [role="dialog"] so modal buttons
+          are clickable and don't fall through to the page beneath. */}
+      <div className="login-footer-wrapper">
+        <style>
+          {`
+            /* disable all interactions within the footer on the register page */
+            .login-footer-wrapper .footer * {
+              pointer-events: none !important;
+            }
+
+            /* enable interaction for the floating chat button and its children */
+            .login-footer-wrapper .footer .footer-chat-btn,
+            .login-footer-wrapper .footer .footer-chat-btn * {
+              pointer-events: auto !important;
+              cursor: pointer;
+            }
+
+            /* enable interaction for the customer service modal (mounted inside footer) */
+            .login-footer-wrapper .footer [role="dialog"],
+            .login-footer-wrapper .footer [role="dialog"] * {
+              pointer-events: auto !important;
+              cursor: auto;
+            }
+
+            /* ensure the chat button and modal overlay sit above other things */
+            .login-footer-wrapper .footer .footer-chat-btn {
+              z-index: 10001;
+            }
+            .login-footer-wrapper .footer [role="dialog"] {
+              z-index: 10002;
+            }
+          `}
+        </style>
+
+        <Footer />
+      </div>
     </div>
   );
 }
