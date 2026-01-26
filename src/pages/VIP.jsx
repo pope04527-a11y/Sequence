@@ -17,6 +17,7 @@ import vip4Img from "../assets/images/vip/vip4.png";
   - If the logged-in user's current VIP equals the selected VIP, the button shows "CURRENT" (disabled).
     Otherwise it shows "UPGRADE".
   - Uses localStorage.currentUser to determine the user's current VIP if available.
+  - Updated: clicking UPGRADE will open the Customer Service modal (dispatch openCustomerService) instead of performing an in-page alert.
 */
 
 const START_BLUE = "#1fb6fc";
@@ -130,6 +131,14 @@ export default function VIP() {
 
   const selected = VIP_LEVELS[selectedIndex];
 
+  const openCustomerServiceModal = () => {
+    try {
+      window.dispatchEvent(new CustomEvent("openCustomerService"));
+    } catch (err) {
+      // noop
+    }
+  };
+
   return (
     <div
       style={{
@@ -144,7 +153,7 @@ export default function VIP() {
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 120px", color: "#fff" }}>
       
 
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 20 }}>
           <h1 style={{ color: "#fff", fontSize: 32, margin: 0, fontWeight: 800 }}>Premium Membership</h1>
         </div>
 
@@ -298,7 +307,12 @@ export default function VIP() {
               ) : (
                 <button
                   onClick={() => {
-                    alert(`Upgrade to ${selected.title} requested. Upgrade flow not implemented.`);
+                    // open customer service modal instead of in-app flow
+                    try {
+                      window.dispatchEvent(new CustomEvent("openCustomerService"));
+                    } catch (err) {
+                      // noop
+                    }
                   }}
                   style={{
                     background: START_BLUE,
