@@ -6,6 +6,7 @@ import refreshIcon from "../assets/images/header/logout.svg";
 import chatIcon from "../assets/images/header/chat.png";
 import "./Register.css";
 import Footer from "../components/Footer.jsx"; // use shared Footer (same approach as Login.jsx)
+import TermsAndConditions from "./TermsAndConditions.jsx"; // render standalone view on top of register
 
 // HEADER (identical to Login page)
 function Header() {
@@ -115,6 +116,9 @@ export default function Register() {
   });
   const [fadeMsg, setFadeMsg] = useState("");
   const [showSpinner, setShowSpinner] = useState(false);
+
+  // Local state to show the standalone Terms & Conditions full-screen view
+  const [termsStandaloneOpen, setTermsStandaloneOpen] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -289,10 +293,15 @@ export default function Register() {
               />
               <label htmlFor="agreed" className="register-checkbox-label">
                 By registering, your account will be subject to the&nbsp;
-                {/* Link to the public Terms page and preserve the return path so the browser back/return button goes back to Register */}
-                <Link to="/terms" state={{ from: "/register" }} className="login-link">
+                {/* Open Terms in a standalone full-screen view (no header/footer) */}
+                <button
+                  type="button"
+                  className="login-link"
+                  style={{ background: "none", border: "none", padding: 0, margin: 0, color: "inherit", textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => setTermsStandaloneOpen(true)}
+                >
                   Terms and Conditions
-                </Link>
+                </button>
               </label>
             </div>
             <button type="submit" className="login-btn">
@@ -343,6 +352,46 @@ export default function Register() {
 
         <Footer />
       </div>
+
+      {/* Standalone Terms & Conditions full-screen view (no header/footer).
+          This renders above everything and includes a Return button that closes it,
+          returning the user to the register page. */}
+      {termsStandaloneOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 11000,
+            background: "linear-gradient(180deg,#071e2f 0%,#0b2b4a 100%)",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {/* Return strip at top (matches Layout's 'Return Home Page' strip style but without header) */}
+          <div style={{ width: "100%", display: "flex", justifyContent: "center", boxSizing: "border-box" }}>
+            <div style={{ maxWidth: 1100, width: "100%", padding: "8px 16px", background: "transparent", borderRadius: 0, marginTop: 8, marginBottom: 8, boxSizing: "border-box" }}>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setTermsStandaloneOpen(false)}
+                  style={{ background: "transparent", border: "none", color: "#ffffff", opacity: 0.95, fontSize: 14, cursor: "pointer", padding: "6px 10px" }}
+                  aria-label="Return to Register"
+                >
+                  Return Home Page &gt;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Terms content area (render the existing TermsAndConditions component)
+              We render it inside a centered container so it looks like the normal page content,
+              but header/footer are not present. */}
+          <div style={{ maxWidth: 1100, margin: "18px auto 40px", padding: "0 16px", background: "#fff", borderRadius: 6 }}>
+            <TermsAndConditions />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
