@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * ContactUs.jsx
@@ -115,6 +116,26 @@ const styles = {
 };
 
 export default function ContactUs() {
+  const navigate = useNavigate();
+
+  const handleOpenCustomerService = (e) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    // Dispatch the same global event the rest of the app listens for
+    try {
+      window.dispatchEvent(new CustomEvent("openCustomerService"));
+    } catch (err) {
+      // noop
+    }
+
+    // Also update the URL so the route reflects the modal (safe because Layout mounts the modal)
+    try {
+      navigate("/customer-service");
+    } catch (err) {
+      // noop if navigate isn't available
+    }
+  };
+
   return (
     <div style={styles.root}>
       <main style={styles.main} role="main" aria-labelledby="contact-heading">
@@ -170,16 +191,8 @@ export default function ContactUs() {
                 <strong>Customer Service:</strong>
               </span>
               <a
-                href="#chat"
-                onClick={(e) => {
-                  e.preventDefault();
-                  try {
-                    // prefer app's chat widget event if available
-                    window.dispatchEvent(new CustomEvent("openChat"));
-                  } catch (err) {
-                    // fallback - no-op
-                  }
-                }}
+                href="/customer-service"
+                onClick={handleOpenCustomerService}
                 style={styles.chatLink}
               >
                 Chat with us
