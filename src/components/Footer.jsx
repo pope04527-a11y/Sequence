@@ -1,6 +1,6 @@
 // src/components/Footer.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/header/logo_black.png";
 import chatIcon from "../assets/images/header/chat.png";
 import CustomerServiceModal from "./CustomerServiceModal.jsx";
@@ -109,17 +109,27 @@ export default function Footer() {
     verticalAlign: "middle",
   };
 
+  // navigation for opening customer service modal/route
+  const navigate = useNavigate();
+
   // local state to control CustomerServiceModal visibility when user clicks the chat icon
   const [csOpen, setCsOpen] = useState(false);
 
   const handleOpenCustomerService = (e) => {
-    // Prevent default anchor behavior so we do NOT navigate away to a separate page
+    // Prevent default anchor behavior if present
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
-    // Open the modal locally
+    // Open local modal state
     setCsOpen(true);
 
-    // Dispatch a global custom event so any globally mounted modal/listener can open as well.
+    // Navigate to the customer service route (so URL updates)
+    try {
+      navigate("/customer-service");
+    } catch (err) {
+      // noop - navigate may fail if router is not present
+    }
+
+    // Also dispatch a global custom event so any globally mounted modal/listener can open.
     try {
       window.dispatchEvent(new CustomEvent("openCustomerService"));
     } catch (err) {
@@ -207,9 +217,7 @@ export default function Footer() {
       </div>
 
       {/* Single fixed floating chat button (visuals preserved by external CSS).
-          Inline style only controls position/size so it stays above the copyright line. 
-          Use an anchor but preventDefault in the click handler so we do not navigate to a /customer-service page.
-      */}
+          Inline style only controls position/size so it stays above the copyright line. */}
       <a
         href="/customer-service"
         onClick={handleOpenCustomerService}
@@ -221,10 +229,8 @@ export default function Footer() {
         <img src={chatIcon} alt="Chat Icon" style={chatImgStyle} />
       </a>
 
-      {/* Local render of the CustomerServiceModal so clicking the chat icon opens it immediately.
-          The modal also listens for the "openCustomerService" event, so it will open if other parts
-          of the app dispatch that event.
-      */}
+      {/* Render the CustomerServiceModal here so clicking the chat icon opens it immediately.
+          We pass the open prop and onClose handler expected by the modal component. */}
       <CustomerServiceModal open={csOpen} onClose={() => setCsOpen(false)} />
     </footer>
   );
