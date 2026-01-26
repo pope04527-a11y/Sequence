@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 
 /**
  * ContactUs.jsx
@@ -116,24 +115,17 @@ const styles = {
 };
 
 export default function ContactUs() {
-  const navigate = useNavigate();
-
   const handleOpenCustomerService = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
-    // Dispatch the same global event the rest of the app listens for
+    // Dispatch the global event the app listens for to open the CustomerService modal.
     try {
       window.dispatchEvent(new CustomEvent("openCustomerService"));
     } catch (err) {
       // noop
     }
 
-    // Also update the URL so the route reflects the modal (safe because Layout mounts the modal)
-    try {
-      navigate("/customer-service");
-    } catch (err) {
-      // noop if navigate isn't available
-    }
+    // Do NOT navigate — only open the modal.
   };
 
   return (
@@ -191,7 +183,7 @@ export default function ContactUs() {
                 <strong>Customer Service:</strong>
               </span>
               <a
-                href="/customer-service"
+                href="#chat"
                 onClick={handleOpenCustomerService}
                 style={styles.chatLink}
               >
