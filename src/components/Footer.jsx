@@ -1,6 +1,6 @@
 // src/components/Footer.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/header/logo_black.png";
 import chatIcon from "../assets/images/header/chat.png";
 
@@ -108,6 +108,28 @@ export default function Footer() {
     verticalAlign: "middle",
   };
 
+  // navigation for opening customer service modal/route
+  const navigate = useNavigate();
+
+  const handleOpenCustomerService = (e) => {
+    // Prevent default anchor behavior if present
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    // Navigate to the customer service route (so URL updates)
+    try {
+      navigate("/customer-service");
+    } catch (err) {
+      // noop - navigate may fail if router is not present
+    }
+
+    // Also dispatch a global custom event so any globally mounted modal/listener can open.
+    try {
+      window.dispatchEvent(new CustomEvent("openCustomerService"));
+    } catch (err) {
+      // noop
+    }
+  };
+
   return (
     <footer className="footer" role="contentinfo" style={footerStyle}>
       <div className="footer-main" style={footerMainStyle}>
@@ -190,7 +212,8 @@ export default function Footer() {
       {/* Single fixed floating chat button (visuals preserved by external CSS).
           Inline style only controls position/size so it stays above the copyright line. */}
       <a
-        href="mailto:support@sequence.com"
+        href="/customer-service"
+        onClick={handleOpenCustomerService}
         className="footer-chat-btn"
         title="Customer Service"
         aria-label="Contact customer service"
