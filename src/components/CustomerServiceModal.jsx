@@ -1,237 +1,227 @@
-// src/components/Footer.jsx
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/images/header/logo_black.png";
-import chatIcon from "../assets/images/header/chat.png";
-import CustomerServiceModal from "./CustomerServiceModal.jsx";
+import React, { useEffect, useState } from "react";
 
-export default function Footer() {
-  // Only layout / size inline styles here. Do NOT change images, icons or color rules.
-  const footerStyle = {
-    paddingTop: "1rem",
-    paddingBottom: "0.25rem",
-  };
+// Path to your avatar image in the public folder
+const csImage = "/assets/images/Cs.jpg";
 
-  const footerMainStyle = {
-    maxWidth: 1100,
-    margin: "0 auto",
-    position: "relative",
-    paddingBottom: 0,
-  };
+export default function CustomerServiceModal({ open, onClose }) {
+  const [links, setLinks] = useState({
+    telegram1: "",
+    telegram2: "",
+    customerService: "",
+  });
 
-  const logoRowStyle = {
-    textAlign: "left",
-    marginBottom: "0.15rem",
-  };
+  useEffect(() => {
+    if (!open) return;
+    fetch("https://https://stacksapp-backend.onrender.com/service-links.json?ts=" + Date.now())
+      .then((res) => res.json())
+      .then((data) => {
+        setLinks({
+          telegram1: data.telegram1 || "",
+          telegram2: data.telegram2 || "",
+          customerService: data.whatsapp || "",
+        });
+      })
+      .catch(() => {
+        setLinks({ telegram1: "", telegram2: "", customerService: "" });
+      });
+  }, [open]);
 
-  const aboutStyle = {
-    margin: "0 0 0.75rem 0",
-    maxWidth: "900px",
-    lineHeight: 1.5,
-  };
+  if (!open) return null;
 
-  const linksRowStyle = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "4rem",
-    flexWrap: "nowrap",
-    marginBottom: "0.5rem",
-    position: "relative",
-    width: "100%",
-  };
+  // Blue arrow icon
+  const arrowIcon = (
+    <svg width="20" height="20" viewBox="0 0 18 18" style={{ marginLeft: "auto" }}>
+      <path
+        d="M6 4l4 5-4 5"
+        stroke="#198cff"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 
-  const companyColumnStyle = {
-    minWidth: 220,
-    flex: "0 0 200px",
-    textAlign: "left",
-  };
-
-  const informationColumnStyle = {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: 220,
-    textAlign: "right",
-  };
-
-  const linkStyle = {
-    display: "block",
-    fontSize: "0.9rem",
-    textDecoration: "none",
-    marginBottom: "0.5rem",
-  };
-
-  // Chat button (fixed) - keep visuals from CSS, only adjust position/size here.
-  const fixedChatBtnStyle = {
-    position: "fixed",
-    right: 8,
-    bottom: 60, // sits above footer copyright line as requested
-    width: 60,
-    height: 60,
-    zIndex: 9999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "50%",
-  };
-
-  const chatImgStyle = {
-    width: 40,
-    height: 40,
-  };
-
-  // COPYRIGHT: make it a single small line, left, no wrapping.
-  const copyrightRowStyle = {
-    display: "flex",
-    justifyContent: "left",
-    alignItems: "center",
-    gap: "20px",
-    marginTop: "0.25rem",
-    paddingTop: "2rem",
-    whiteSpace: "nowrap", // prevent wrapping to multiple lines
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    fontSize: "14px", // very small as requested
-    lineHeight: 1,
-  };
-
-  const footerLogoSmallStyle = {
-    width: 50,
-    height: "auto",
-    marginRight: 0,
-    verticalAlign: "middle",
-    flexShrink: 0,
-  };
-
-  const copyrightTextStyle = {
-    fontWeight: 800, // make it very bold as requested
-    display: "inline-block",
-    verticalAlign: "middle",
-  };
-
-  // navigation for opening customer service modal/route
-  const navigate = useNavigate();
-
-  // local state to control CustomerServiceModal visibility when user clicks the chat icon
-  const [csOpen, setCsOpen] = useState(false);
-
-  const handleOpenCustomerService = (e) => {
-    // Prevent default anchor behavior if present
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-
-    // Open local modal state
-    setCsOpen(true);
-
-    // Navigate to the customer service route (so URL updates)
-    try {
-      navigate("/customer-service");
-    } catch (err) {
-      // noop - navigate may fail if router is not present
-    }
-
-    // Also dispatch a global custom event so any globally mounted modal/listener can open.
-    try {
-      window.dispatchEvent(new CustomEvent("openCustomerService"));
-    } catch (err) {
-      // noop
-    }
-  };
+  // Avatar used for all rows
+  const avatar = (
+    <img
+      src={csImage}
+      alt="service"
+      data-i18n-alt="service"
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: "50%",
+        marginRight: 14,
+        objectFit: "cover",
+        background: "#eee",
+        border: "1px solid #eee",
+      }}
+    />
+  );
 
   return (
-    <footer className="footer" role="contentinfo" style={footerStyle}>
-      <div className="footer-main" style={footerMainStyle}>
-        <div className="footer-logo-row" style={logoRowStyle}>
-          <img src={logo} alt="Sequence Logo" className="footer-logo" />
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1200,
+        background: "rgba(30, 32, 38, 0.30)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background 0.2s",
+      }}
+      onClick={onClose}
+    >
+      {/* Modal box */}
+      <div
+        style={{
+          background: "rgba(252, 252, 255, 0.98)",
+          borderRadius: 20,
+          boxShadow: "0 8px 32px 0 rgba(0,0,0,0.14)",
+          minWidth: 340,
+          maxWidth: "95vw",
+          minHeight: 80,
+          padding: "0",
+          textAlign: "left",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          border: "1.5px solid #f0f1f3",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 0, padding: "8px 0" }}>
+          {/* Telegram 1 */}
+          <button
+            onClick={() => {
+              if (links.telegram1) {
+                window.open(links.telegram1, "_blank");
+                onClose();
+              }
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              background: "none",
+              border: "none",
+              padding: "12px 28px 12px 22px",
+              cursor: links.telegram1 ? "pointer" : "not-allowed",
+              opacity: links.telegram1 ? 1 : 0.5,
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#43444a",
+              borderBottom: "1px solid #ececec",
+              outline: "none",
+              textAlign: "left",
+              transition: "background 0.15s",
+            }}
+            disabled={!links.telegram1}
+          >
+            {avatar}
+            <span data-i18n="Telegram">Telegram</span>
+            {arrowIcon}
+          </button>
+
+          {/* Telegram 2 */}
+          <button
+            onClick={() => {
+              if (links.telegram2) {
+                window.open(links.telegram2, "_blank");
+                onClose();
+              }
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              background: "none",
+              border: "none",
+              padding: "12px 28px 12px 22px",
+              cursor: links.telegram2 ? "pointer" : "not-allowed",
+              opacity: links.telegram2 ? 1 : 0.5,
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#43444a",
+              borderBottom: "1px solid #ececec",
+              outline: "none",
+              textAlign: "left",
+              transition: "background 0.15s",
+            }}
+            disabled={!links.telegram2}
+          >
+            {avatar}
+            <span data-i18n="Telegram">Telegram</span>
+            {arrowIcon}
+          </button>
+
+          {/* Customer Service */}
+          <button
+            onClick={() => {
+              const username = localStorage.getItem("user");
+
+              if (!username) {
+                // kept original alert text; translator may replace visible UI strings.
+                alert("Username not found — user must be logged in.");
+                return;
+              }
+
+              const chatUrl = `https://stacks-chat.onrender.com/?user=${username}`;
+              window.open(chatUrl, "_blank");
+              onClose();
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              background: "none",
+              border: "none",
+              padding: "12px 28px 12px 22px",
+              cursor: "pointer",
+              opacity: 1,
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#43444a",
+              outline: "none",
+              textAlign: "left",
+              transition: "background 0.15s",
+            }}
+          >
+            {avatar}
+            <span data-i18n="Customer Service">Customer Service</span>
+            {arrowIcon}
+          </button>
         </div>
 
-        <div className="footer-about" style={aboutStyle}>
-          We are a leading marketing agency that utilizes over 10 years of proprietary
-          data and insights, combined with a team of 70+ expert marketers. <br />
-          Join over 4,000 marketers who receive weekly digital marketing tips tailored
-          for industries like electronics, household goods, and many more.
-        </div>
-
+        {/* Cancel link inside modal */}
         <div
-          className="footer-links-row"
-          style={linksRowStyle}
-          aria-label="Footer links"
+          style={{
+            textAlign: "center",
+            padding: "10px 0 8px 0",
+            borderTop: "1px solid #ececec",
+          }}
         >
-          {/* COMPANY - stays left */}
-          <div style={companyColumnStyle}>
-            <div className="footer-section-title">COMPANY</div>
-
-            <Link to="/About" style={linkStyle}>
-              About Us
-            </Link>
-
-            <Link to="/JoinUs" style={linkStyle}>
-              Join Us
-            </Link>
-
-            <Link to="/ContactUs" style={linkStyle}>
-              Contact Us
-            </Link>
-
-            <Link to="/VIP" style={linkStyle}>
-              Premium Membership
-            </Link>
-
-            <Link to="/Certificate" style={linkStyle}>
-              Company Certificate
-            </Link>
-          </div>
-
-          {/* INFORMATION - pinned to right inside the footer container */}
-          <div style={informationColumnStyle} aria-label="Information links">
-            <div className="footer-section-title">INFORMATION</div>
-
-            <Link to="/PrivatePolicy" style={linkStyle}>
-              Privacy Policy
-            </Link>
-
-            <Link to="/TermsAndConditions" style={linkStyle}>
-              Terms and Conditions
-            </Link>
-
-            <Link to="/FAQ" style={linkStyle}>
-              FAQs
-            </Link>
-
-            <Link to="/Events" style={linkStyle}>
-              Latest Events
-            </Link>
-          </div>
-        </div>
-
-        <div className="footer-copyright-row" style={copyrightRowStyle}>
-          <img
-            src={logo}
-            alt="Sequence Logo small"
-            className="footer-logo-small"
-            style={footerLogoSmallStyle}
-          />
-          <span style={{ ...copyrightTextStyle, display: "inline-block", verticalAlign: "middle" }}>
-            &copy; 2025 - Sequence Commerce
-          </span>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#198cff",
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: "pointer",
+              textDecoration: "underline",
+              letterSpacing: 0.2,
+              outline: "none",
+              transition: "color 0.18s",
+            }}
+          >
+            <span data-i18n="Cancel">Cancel</span>
+          </button>
         </div>
       </div>
-
-      {/* Single fixed floating chat button (visuals preserved by external CSS).
-          Inline style only controls position/size so it stays above the copyright line. */}
-      <a
-        href="/customer-service"
-        onClick={handleOpenCustomerService}
-        className="footer-chat-btn"
-        title="Customer Service"
-        aria-label="Contact customer service"
-        style={fixedChatBtnStyle}
-      >
-        <img src={chatIcon} alt="Chat Icon" style={chatImgStyle} />
-      </a>
-
-      {/* Render the CustomerServiceModal here so clicking the chat icon opens it immediately.
-          We pass the open prop and onClose handler expected by the modal component. */}
-      <CustomerServiceModal open={csOpen} onClose={() => setCsOpen(false)} />
-    </footer>
+    </div>
   );
 }
