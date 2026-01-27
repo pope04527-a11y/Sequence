@@ -199,11 +199,159 @@ function BannerSlider() {
   );
 }
 
+/*
+  RotatingSection
+  - Renders a section whose background is an absolutely positioned <img> that cycles through a provided images array.
+  - Uses objectFit 'cover' so the image fills the section and remains responsive across devices.
+  - The first section is intentionally taller than the others; content is centered and padded so nothing is cut on small screens.
+*/
+function RotatingSection({ images, title, desc, btn, url, height = 420, minHeightMobile = 260, interval = 3000 }) {
+  const [index, setIndex] = useState(0);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    const id = setInterval(() => {
+      if (!mounted.current) return;
+      setIndex((s) => (s + 1) % images.length);
+    }, interval);
+
+    return () => {
+      mounted.current = false;
+      clearInterval(id);
+    };
+  }, [images.length, interval]);
+
+  // Inline styles to ensure content doesn't get cut on small devices.
+  const sectionStyle = {
+    position: "relative",
+    overflow: "visible",
+    // allow the first card to be larger on all devices
+    minHeight: `${minHeightMobile}px`,
+    height: "auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "28px 0",
+    boxSizing: "border-box",
+  };
+
+  const imageWrapperStyle = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    zIndex: 0,
+    border: "8px solid rgba(7,30,47,1)",
+    boxSizing: "border-box",
+    borderRadius: 4,
+  };
+
+  const imgStyle = {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover", // cover so it fills without squishing; center crop keeps visual consistent
+    display: "block",
+    transition: "opacity 600ms ease",
+    opacity: 1,
+  };
+
+  const overlayStyle = {
+    position: "relative",
+    zIndex: 2,
+    width: "100%",
+    maxWidth: 1100,
+    padding: "32px 18px",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const contentStyle = {
+    textAlign: "center",
+    color: "#fff",
+    // ensure content stays visible and spaced from edges on very small screens
+    padding: "10px 8px",
+  };
+
+  const titleStyle = {
+    fontSize: "36px",
+    fontWeight: 800,
+    marginBottom: 8,
+    textShadow: "0 4px 14px rgba(0,0,0,0.45)",
+  };
+
+  const descStyle = {
+    fontSize: "16px",
+    opacity: 0.95,
+    marginBottom: 16,
+    textShadow: "0 3px 10px rgba(0,0,0,0.35)",
+  };
+
+  const btnStyle = {
+    display: "inline-block",
+    background: "#158a93",
+    color: "#fff",
+    padding: "14px 26px",
+    borderRadius: 8,
+    textDecoration: "none",
+    fontWeight: 800,
+    boxShadow: "0 8px 20px rgba(21,138,147,0.18)",
+  };
+
+  return (
+    <section
+      className="dashboard-menu-section rotating-section"
+      aria-label={title}
+      style={{ ...sectionStyle }}
+    >
+      {/* Image wrapper: show current image as full-bleed background */}
+      <div style={imageWrapperStyle} aria-hidden>
+        {images.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`${title} ${i + 1}`}
+            style={{
+              ...imgStyle,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              opacity: i === index ? 1 : 0,
+            }}
+            draggable={false}
+          />
+        ))}
+      </div>
+
+      {/* overlay with content centered */}
+      <div style={overlayStyle}>
+        <div style={contentStyle}>
+          <div style={titleStyle}>{title}</div>
+          <div style={descStyle}>{desc}</div>
+          <Link to={url} className="dashboard-menu-btn" style={btnStyle}>
+            {btn} <span className="dashboard-menu-btn-arrow">→</span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleMenuClick = () => setSidebarOpen(true);
   const handleSidebarClose = () => setSidebarOpen(false);
+
+  // Choose a set of images for the first card to rotate.
+  // Using the section image (shoes) plus two banner images provides visual variety
+  // while keeping the first card clearly associated with the Shoes section.
+  const firstSectionImages = [shoesImg, bannerImg1, bannerImg2];
 
   return (
     <div className="login-bg-hero">
@@ -212,16 +360,37 @@ export default function Dashboard() {
       <main className="dashboard-main-content">
         <BannerSlider />
         <div className="dashboard-banner-menu-spacing"></div>
-        {dashboardSections.map((section, i) => (
+
+        {/* First section as a rotating, taller, fully-responsive card */}
+        <RotatingSection
+          images={firstSectionImages}
+          title={dashboardSections[0].title}
+          desc={dashboardSections[0].desc}
+          btn={dashboardSections[0].btn}
+          url={dashboardSections[0].url}
+          height={420}
+          minHeightMobile={300}
+          interval={3500}
+        />
+
+        {/* Render the rest of the sections as before but ensure content overlay is centered and images fit */}
+        {dashboardSections.slice(1).map((section, i) => (
           <section
             className={`dashboard-menu-section${section.title === "COMMODITIES" ? " commodities-section" : ""}`}
             key={section.title || i}
-            style={{ backgroundImage: `url(${section.img})` }}
+            // keep background-image for compatibility but also ensure overlay content won't be cut on small devices
+            style={{
+              backgroundImage: `url(${section.img})`,
+              // ensure each non-first section has a consistent height and spacing
+              minHeight: "220px",
+              padding: "28px 0",
+              boxSizing: "border-box",
+            }}
           >
             <div className="dashboard-menu-overlay">
-              <div className="dashboard-menu-content dashboard-menu-content-center">
-                <div className="dashboard-menu-title">{section.title}</div>
-                <div className="dashboard-menu-desc">{section.desc}</div>
+              <div className="dashboard-menu-content dashboard-menu-content-center" style={{ padding: "18px 12px" }}>
+                <div className="dashboard-menu-title" style={{ marginBottom: 8 }}>{section.title}</div>
+                <div className="dashboard-menu-desc" style={{ marginBottom: 16 }}>{section.desc}</div>
                 <Link to={section.url} className="dashboard-menu-btn">
                   {section.btn} <span className="dashboard-menu-btn-arrow">→</span>
                 </Link>
@@ -229,6 +398,7 @@ export default function Dashboard() {
             </div>
           </section>
         ))}
+
         <BrandLogoRow />
         <QuickMenu />
       </main>
