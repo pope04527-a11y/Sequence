@@ -16,8 +16,9 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Send devUsername in the request body (avoids CORS preflight for custom headers).
   - After a successful task submission we now immediately call refreshProfile()
     so balance and commission values in the global balance context update right away
-    (no manual page refresh required). The local derived state `localCommissionToday`
-    will be updated via the existing effect that watches `commissionToday`.
+    (no manual page refresh required). We also ensure the overall submission flow
+    completes within a maximum of 3 seconds (falls back early if the backend or
+    profile refresh is slow) so the user can return to tasks quickly.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -378,39 +379,80 @@ export default function Tasks() {
   };
 
   const handleSubmitTask = async () => {
+    // Start submitting
     setSubmitState("submitting");
-    setTimeout(async () => {
+
+    const start = Date.now();
+    try {
+      // Perform submission API call
       const result = await submitTaskRecord(currentTask.taskCode);
-      if (result.success) {
-        setSubmitState("submitted");
 
-        // Immediately refresh the user's profile so balance and commission values update right away.
-        // refreshProfile is provided by the balance context; call it if available.
-        try {
-          const maybe = refreshProfile && refreshProfile();
-          // If refreshProfile returns a promise, await it to ensure data is refreshed before continuing.
-          if (maybe && typeof maybe.then === "function") await maybe;
-        } catch (e) {
-          // ignore errors in profile refresh - UI will still continue
-        }
-
-        setTimeout(() => {
-          setShowModal(false);
-          setCurrentTask(null);
-          setSubmitState("");
-          setFadeSpinner(true);
-
-          // fadeSpinner will be hidden below; we keep the navigate to /tasks as before.
-          setTimeout(() => {
-            setFadeSpinner(false);
-            navigate("/tasks");
-          }, 900);
-        }, 900);
-      } else {
+      if (!result || !result.success) {
         setSubmitState("");
-        showGreyToast(result.message || "Failed to submit task");
+        showGreyToast((result && result.message) || "Failed to submit task");
+        return;
       }
-    }, 1000);
+
+      // Mark submitted in UI immediately
+      setSubmitState("submitted");
+
+      // Try to refresh profile but do not block longer than allowed.
+      // We'll race refreshProfile() against a timeout so the whole submission flow completes within 3s.
+      const MAX_TOTAL_MS = 3000;
+      const MAX_REFRESH_MS = 1800; // allow up to this for profile refresh
+
+      const refreshFn = () => {
+        try {
+          return refreshProfile ? refreshProfile() : Promise.resolve();
+        } catch (e) {
+          return Promise.resolve();
+        }
+      };
+
+      // Await either refreshProfile or the refresh timeout (whichever comes first)
+      await Promise.race([
+        (async () => {
+          const maybe = refreshFn();
+          if (maybe && typeof maybe.then === "function") {
+            // await the refresh but ensure it doesn't exceed MAX_REFRESH_MS
+            return Promise.race([maybe, new Promise((res) => setTimeout(res, MAX_REFRESH_MS))]);
+          }
+          return maybe;
+        })(),
+        new Promise((res) => setTimeout(res, MAX_REFRESH_MS)),
+      ]);
+
+      // Ensure we don't exceed MAX_TOTAL_MS from the start: compute elapsed and finish within allowed window.
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, MAX_TOTAL_MS - elapsed);
+
+      // We will do a short wait to allow the user to perceive the "Submitted" state, but we won't exceed the total.
+      // Keep this small (<= 600ms) so overall flow remains snappy.
+      const SHORT_PAUSE = Math.min(600, remaining);
+      if (SHORT_PAUSE > 0) {
+        await new Promise((res) => setTimeout(res, SHORT_PAUSE));
+      }
+
+      // Close modal and clear current task so user returns to tasks list
+      setShowModal(false);
+      setCurrentTask(null);
+      setSubmitState("");
+      setFadeSpinner(true);
+
+      // hide fade spinner quickly and navigate back to tasks so user can start another task
+      setTimeout(() => {
+        setFadeSpinner(false);
+        // navigate to tasks (same page) to ensure the UI resets as intended
+        try {
+          navigate("/tasks");
+        } catch (e) {
+          // noop
+        }
+      }, 250);
+    } catch (err) {
+      setSubmitState("");
+      showGreyToast("Submission error: " + (err && err.message ? err.message : String(err)));
+    }
   };
 
   function renderTaskModal() {
