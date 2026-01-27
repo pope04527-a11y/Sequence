@@ -154,12 +154,14 @@ function BannerSlider() {
   useEffect(() => {
     let animationFrameId;
     let start;
+    // keep original subjective pxPerSec speed so loop appears identical
     let pxPerSec = 40;
     let trackWidth = 0;
 
     function setTrackWidth() {
       if (trackRef.current) {
-        trackWidth = trackRef.current.scrollWidth / 2;
+        // compute half of scrollWidth to match duplicated slides logic
+        trackWidth = Math.max(1, trackRef.current.scrollWidth / 2);
       }
     }
 
@@ -171,6 +173,7 @@ function BannerSlider() {
       const elapsed = (ts - start) / 1000;
       const px = (elapsed * pxPerSec) % trackWidth;
       if (trackRef.current) {
+        // use transform without abrupt jumps to preserve continuous effect
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
       animationFrameId = requestAnimationFrame(animateBanner);
@@ -188,66 +191,74 @@ function BannerSlider() {
 
   return (
     <section className="dashboard-banner-section banner-slider-container">
-      {/* Inline styles specific to banner sizing/responsiveness.
-          We increase the banner image height (so banner card is bigger than the regular sections)
-          while ensuring images use object-fit: cover and remain centered on all devices.
-          Other section styles are untouched.
+      {/* Inline styles applied only to the banner to increase its visual prominence and ensure responsive behavior.
+          Notes:
+          - Banner images are larger than the regular section cards.
+          - Use object-fit: cover to keep images filling the banner area while preserving focal center.
+          - Ensure banner remains responsive and does not cause other content to be hidden on narrow screens.
+          - Continuous loop is preserved via duplicated slides + transform animation above.
       */}
       <style>{`
-        /* Banner-specific sizing: make banner slides taller than normal section cards */
+        .banner-slider-container {
+          box-sizing: border-box;
+          padding: 10px 12px;
+          width: 100%;
+        }
+
         .banner-slider-track-continuous {
           display: flex;
           align-items: center;
+          /* ensure track uses full width and can transform smoothly */
+          will-change: transform;
         }
 
         .banner-slider-slide-continuous {
-          flex: 0 0 auto;
+          flex: 0 0 100%;
           width: 100%;
           box-sizing: border-box;
           padding: 0;
         }
 
-        /* Banner image: increase height and use cover so image fills the banner card responsively */
+        /* Banner image styling: larger than section cards but responsive.
+           object-fit: cover keeps the image filling the banner area while centering the important parts.
+        */
         .banner-slider-slide-continuous .banner-slider-img {
           width: 100%;
-          height: 360px; /* default banner height for tablets/desktop */
+          height: 320px; /* mobile baseline - larger than regular section cards on mobile */
           object-fit: cover;
           object-position: center;
           display: block;
           border-radius: 4px;
         }
 
-        /* Larger on large desktop screens */
-        @media (min-width: 1200px) {
+        /* Slightly taller on small tablets */
+        @media (min-width: 520px) {
+          .banner-slider-slide-continuous .banner-slider-img {
+            height: 360px;
+          }
+        }
+
+        /* Desktop and large screens: more prominent banner height */
+        @media (min-width: 900px) {
           .banner-slider-slide-continuous .banner-slider-img {
             height: 420px;
           }
         }
 
-        /* Slightly taller mid-size screens for better prominence */
-        @media (min-width: 900px) and (max-width: 1199px) {
+        @media (min-width: 1200px) {
           .banner-slider-slide-continuous .banner-slider-img {
-            height: 380px;
+            height: 460px;
           }
         }
 
-        /* Reduce height on small screens but keep prominence (still larger than section cards) */
-        @media (max-width: 520px) {
-          .banner-slider-slide-continuous .banner-slider-img {
-            height: 260px;
-          }
-        }
-
-        /* Ensure the banner container doesn't clip the image or hide other page content on small devices */
+        /* Prevent the banner from collapsing or hiding subsequent content on very small viewports */
         .banner-slider-container {
-          padding: 10px 12px;
-          box-sizing: border-box;
+          overflow: visible;
         }
 
-        /* Keep the continuous track transform smooth */
-        .banner-slider-track-continuous {
-          will-change: transform;
-          transition: transform 0.1s linear;
+        /* Keep spacing consistent so the regular section cards remain visible and unchanged below */
+        .dashboard-banner-section + .dashboard-banner-menu-spacing {
+          height: 18px;
         }
       `}</style>
 
