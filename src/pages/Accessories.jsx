@@ -4,24 +4,6 @@ import "./Shoes.css";
 // Adjust the path if your image is in a different folder under src.
 import ShoesHero from "../assets/images/dashboard/Accessories.png";
 
-/**
- * Furniture page (kept layout & CSS identical to Shoes.jsx)
- * - Uses the same Shoes.css styles and the same two-column, 8-per-page layout.
- * - Product URLs replaced with the Accessories URLs you provided and shuffled at runtime.
- * - Images are set to fit within the image frame regardless of original size.
- * - Only product URLs, hero image and a small image-fit & layout CSS change were applied; rest of the file left intact.
- *
- * Key changes made to satisfy your requests:
- * - Ensure the layout always stays 2x4 (two columns, four stacked cards each) even on small screens.
- *   I removed the CSS rule that collapsed the grid to a single column and ensured two-column grid is always used.
- * - Make the product image area adapt to the remaining vertical space in the card after the name/description area.
- *   The image wrapper now flexes (flex: 1) and the info section (name/desc) is non-flexing (flex: 0) so the image fits
- *   into whatever vertical space is left without overflowing. Images use object-fit: contain so they never crop.
- *
- * Nothing else in logic, data, or markup was removed — only the CSS related to image sizing and the small responsive
- * rule that collapsed columns was adjusted so pages always show two columns of four items.
- */
-
 /* Helper: build a friendly name from the Cloudinary filename */
 function friendlyNameFromUrl(url) {
   try {
@@ -174,37 +156,31 @@ function shuffleArray(arr) {
   return a;
 }
 
-/* Build product objects with name and a short description (furniture-focused descriptions retained) */
+/* Build product objects with name and a short description (accessories-focused descriptions) */
 const productsFromUrls = (urls) =>
   urls.map((url, idx) => {
     const name = friendlyNameFromUrl(url);
     const lower = name.toLowerCase();
     const desc = (() => {
-      if (lower.includes("sofa") || lower.includes("couch") || lower.includes("sectional") || lower.includes("divan")) {
-        return "Comfortable sofas & sectionals — premium upholstery and lasting comfort.";
+      if (lower.includes("bag") || lower.includes("handbag") || lower.includes("tote") || lower.includes("shoulder") || lower.includes("crossbody")) {
+        return "Premium bags & totes — stylish, durable, and travel-ready.";
       }
-      if (lower.includes("bed") || lower.includes("mattress") || lower.includes("loft") || lower.includes("bunk")) {
-        return "Beds & bedroom furniture — solid construction and elegant designs.";
+      if (lower.includes("glasses") || lower.includes("eyewear") || lower.includes("sunglass") || lower.includes("eyeglass")) {
+        return "Eyewear & sunglasses — fashionable frames and precise optics.";
       }
-      if (lower.includes("table") || lower.includes("coffee") || lower.includes("dining") || lower.includes("desk")) {
-        return "Tables & desks — functional, stylish surfaces for every room.";
+      if (lower.includes("belt") || lower.includes("buckle")) {
+        return "Belts & hardware — crafted details for a refined look.";
       }
-      if (lower.includes("chair") || lower.includes("armrest") || lower.includes("stool") || lower.includes("high") ) {
-        return "Chairs & seating — ergonomics and style combined.";
+      if (lower.includes("hat") || lower.includes("cap") || lower.includes("headband")) {
+        return "Headwear & accessories — finishing touches for any outfit.";
       }
-      if (lower.includes("lamp") || lower.includes("lighting") || lower.includes("bedside") || lower.includes("mirror")) {
-        return "Lighting & decor — accent pieces to brighten your home.";
+      if (lower.includes("perfume") || lower.includes("fragrance") || lower.includes("scent")) {
+        return "Fragrances & beauty — carefully curated scents.";
       }
-      if (lower.includes("wardrobe") || lower.includes("dresser") || lower.includes("cabinet") || lower.includes("storage")) {
-        return "Storage & wardrobes — keep your space organized with style.";
+      if (lower.includes("jewel") || lower.includes("necklace") || lower.includes("earring") || lower.includes("bracelet")) {
+        return "Jewelry & gifts — elegant pieces for special moments.";
       }
-      if (lower.includes("outdoor") || lower.includes("patio") || lower.includes("garden") || lower.includes("party")) {
-        return "Outdoor & patio furniture — durable and weather-resistant.";
-      }
-      if (lower.includes("hospital") || lower.includes("medical") || lower.includes("surgical") || lower.includes("wheelchair") || lower.includes("patient")) {
-        return "Professional-grade medical furniture & equipment.";
-      }
-      return "Quality furniture and home decor — crafted for comfort and style.";
+      return "Quality accessories — finishing touches for style and comfort.";
     })();
 
     return {
@@ -215,7 +191,7 @@ const productsFromUrls = (urls) =>
     };
   });
 
-export default function Furniture() {
+export default function Accessories() {
   // Shuffle once on component mount
   const shuffledUrls = useMemo(() => shuffleArray(productUrls), []);
   const products = useMemo(() => productsFromUrls(shuffledUrls), [shuffledUrls]);
@@ -262,39 +238,34 @@ export default function Furniture() {
           padding: 18px 10px;
         }
 
-        /* Two columns layout: left and right columns stacked vertically
-           IMPORTANT: keep two columns ALWAYS (never collapse to single column).
-           This ensures a 2x4 layout even on narrow screens as you requested.
-        */
+        /* Two-column grid: keep two columns always while allowing min widths */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: 1fr 1fr; /* always two columns */
+          grid-template-columns: repeat(2, minmax(180px, 1fr));
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        /* Allow horizontal scrolling if the viewport gets so narrow the two columns don't fit.
-           This preserves the two-column requirement and avoids collapsing to 1 column.
-        */
         @media (max-width: 520px) {
           .two-column-vertical {
-            overflow-x: auto;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
             padding: 0 12px;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(240px, 1fr);
-            align-items: start;
+            overflow-x: auto;
           }
         }
 
-        /* Column container holds 4 stacked cards */
         .column-stack {
           display: flex;
           flex-direction: column;
           gap: 18px;
         }
 
-        /* Frame around each card to match screenshot look */
+        /*
+          FIXED CARD HEIGHT:
+          - Guarantee each card uses the same fixed height so long images or long titles
+            do not stretch their row or adjacent cards.
+        */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -303,15 +274,19 @@ export default function Furniture() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          /* Let each card stretch naturally; image region will occupy remaining space after info */
-          height: 100%;
+          height: 360px;
+          min-height: 360px;
+          max-height: 360px;
         }
 
-        /* Image wrapper now flexes to take remaining vertical space after the info (name/desc).
-           The info block is non-flexing to allow the image to adapt to leftover space.
-           This makes the image always fit inside the card's remaining area after the text.
-        */
+        /* Info area fixed so text cannot push the image area taller */
+        .shoe-info {
+          padding: 14px;
+          background: #fff;
+          flex: 0 0 92px; /* fixed info height */
+          box-sizing: border-box;
+        }
+
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -320,9 +295,10 @@ export default function Furniture() {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1 1 auto; /* <-- image area expands to fill remaining vertical space */
+          flex: 1 1 auto;
+          min-height: 0; /* ensures flexbox can shrink properly */
+          padding: 6px;
         }
-        /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
@@ -330,12 +306,6 @@ export default function Furniture() {
           height: auto;
           object-fit: contain;
           display: block;
-        }
-
-        .shoe-info {
-          padding: 14px;
-          background: #fff;
-          flex: 0 0 auto; /* <-- info won't flex; it takes only the space it needs */
         }
 
         .shoe-name {
@@ -361,31 +331,49 @@ export default function Furniture() {
           overflow: hidden;
         }
 
-        /* Pagination style */
+        /* Pagination: constrain to same max width as grid so it never overflows the page */
         .pagination-wrap {
-          display:flex;
-          justify-content:center;
-          padding: 22px 0 44px;
+          display: flex;
+          justify-content: center;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+
+        /* Keep the inner pagination content constrained and horizontally scrollable on very small viewports */
+        .pagination-inner {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          max-width: 1200px; /* same as grid */
+          width: 100%;
+          margin: 0 auto;
+          overflow-x: auto; /* allow scrolling when many page buttons exist */
+          -webkit-overflow-scrolling: touch;
+          padding: 6px;
+          box-sizing: border-box;
+        }
+
+        .pagination-inner::-webkit-scrollbar { height: 8px; } /* small scrollbar if visible */
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
         }
 
-        /* Extra small screens: reduce frame thickness and font sizes */
         @media (max-width: 520px) {
-          .shoe-card-frame { border-width: 4px; min-height: 220px; }
+          .shoe-card-frame { border-width: 4px; height: 320px; min-height: 320px; max-height: 320px; }
+          .shoe-info { flex: 0 0 88px; }
           .shoe-name { font-size: 15px; }
           .shoe-desc { font-size: 12px; }
         }
@@ -425,7 +413,7 @@ export default function Furniture() {
               {leftColumn.map((p) => (
                 <a
                   key={p.id}
-                  href={`/furniture/${p.id}`}
+                  href={`/accessories/${p.id}`}
                   className="shoe-card-frame"
                   role="listitem"
                   title={`${p.name} — ${p.desc}`}
@@ -446,7 +434,7 @@ export default function Furniture() {
               {rightColumn.map((p) => (
                 <a
                   key={p.id}
-                  href={`/furniture/${p.id}`}
+                  href={`/accessories/${p.id}`}
                   className="shoe-card-frame"
                   role="listitem"
                   title={`${p.name} — ${p.desc}`}
@@ -464,40 +452,42 @@ export default function Furniture() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                onClick={() => goTo(n)}
+                className={n === currentPage ? "active" : ""}
+                aria-current={n === currentPage ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
