@@ -166,36 +166,35 @@ export default function Shoes() {
           padding: 18px 10px;
         }
 
-        /* Two columns layout: left and right columns stacked vertically
-           IMPORTANT: keep two columns ALWAYS (never collapse to single column).
-        */
+        /* Two-column grid: keep two columns always while allowing min widths */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: 1fr 1fr; /* always two columns */
+          grid-template-columns: repeat(2, minmax(180px, 1fr));
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        /* Allow horizontal scrolling if the viewport gets very narrow so we never collapse to 1 column */
         @media (max-width: 520px) {
           .two-column-vertical {
-            overflow-x: auto;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
             padding: 0 12px;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(240px, 1fr);
-            align-items: start;
+            overflow-x: auto;
           }
         }
 
-        /* Column container holds 4 stacked cards */
+        /* column-stack remains for semantic grouping */
         .column-stack {
           display: flex;
           flex-direction: column;
           gap: 18px;
         }
 
-        /* Frame around each card to match screenshot look */
+        /*
+          FIXED CARD HEIGHT:
+          - Guarantee each card uses the same fixed height so long images or long titles
+            do not stretch their row or adjacent cards.
+        */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -204,14 +203,19 @@ export default function Shoes() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          height: 100%;
+          height: 360px;
+          min-height: 360px;
+          max-height: 360px;
         }
 
-        /* Image wrapper now flexes to take remaining vertical space after the info (name/desc).
-           The info block is non-flexing so it occupies only the height it needs.
-           This ensures images always fit within the leftover space of the card.
-        */
+        /* Info area fixed so text cannot push the image area taller */
+        .shoe-info {
+          padding: 14px;
+          background: #fff;
+          flex: 0 0 92px; /* fixed info height */
+          box-sizing: border-box;
+        }
+
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -220,23 +224,17 @@ export default function Shoes() {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1 1 auto; /* image area expands to fill remaining vertical space */
-          padding: 0; /* remove fixed aspect padding to allow flexible height */
+          flex: 1 1 auto;
+          min-height: 0; /* ensures flexbox can shrink properly */
+          padding: 6px;
         }
-        /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
           width: auto;
           height: auto;
-          object-fit: contain; /* do not crop; fit inside available space */
+          object-fit: contain;
           display: block;
-        }
-
-        .shoe-info {
-          padding: 14px;
-          background: #fff;
-          flex: 0 0 auto; /* info won't flex; it takes only the space it needs */
         }
 
         .shoe-name {
@@ -284,17 +282,16 @@ export default function Shoes() {
           border-color: #1e90ff;
         }
 
-        /* Extra small screens: reduce frame thickness and font sizes */
         @media (max-width: 520px) {
-          .shoe-card-frame { border-width: 4px; min-height: 220px; }
+          .shoe-card-frame { border-width: 4px; height: 320px; min-height: 320px; max-height: 320px; }
+          .shoe-info { flex: 0 0 88px; }
           .shoe-name { font-size: 15px; }
           .shoe-desc { font-size: 12px; }
         }
       `}</style>
 
       <main className="shoes-main">
-        {/* Hero Section: background now uses the imported Watches.png asset (bundler-resolved)
-            Increased minHeight so the hero "card" is larger than product cards. */}
+        {/* Hero Section: background now uses the imported Watches.png asset (bundler-resolved) */}
         <section
           className="shoes-hero"
           style={{
@@ -328,7 +325,7 @@ export default function Shoes() {
               {leftColumn.map((p) => (
                 <a
                   key={p.id}
-                  href={`/shoes/${p.id}`}
+                  href={`/watches/${p.id}`}
                   className="shoe-card-frame"
                   role="listitem"
                   title={`${p.name} — ${p.desc}`}
@@ -349,7 +346,7 @@ export default function Shoes() {
               {rightColumn.map((p) => (
                 <a
                   key={p.id}
-                  href={`/shoes/${p.id}`}
+                  href={`/watches/${p.id}`}
                   className="shoe-card-frame"
                   role="listitem"
                   title={`${p.name} — ${p.desc}`}
