@@ -47,7 +47,7 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090784/products/2022_New_Unisex_Air_Shoes_Fashion_Trend_Sneakers_Flat_Custom_2022_New_Unisex_Air_Shoes_Fashion_Trend_Sneakers_Flat_Custom_77_88.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750094816/products/Factory_outlet_Professional_Hand_made_Clap_ice_skate_shoes_i_Factory_outlet_Professional_Hand_made_Clap_ice_skate_shoes_i_276_75.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750093561/products/Cow_Leather_Combat_Boots_Tactical_Shoes_Sale_Black_OEM_Color_Cow_Leather_Combat_Boots_Tactical_Shoes_Sale_Black_OEM_Color_152_4.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750092762/products/Best_Selling_Fashion_Leisure_Men_Shoes_Winter_Warm_Ankle_Sno_Best_Selling_Fashion_Leisure_Men_Shoes_Winter_Warm_Ankle_Sno_190_8.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750092762/products/Best_Selling_Fashion_Leisure_Men_Shoes_Winter_Warm_Ankle_Sno_Best_Sell_Best_Selling_Fashion_Leisure_Men_Shoes_Winter_Warm_Ankle_Sno_190_8.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750120147/products/Trendy_luxury_chunky_heel_office_shoes_women_heels_pump_croc_Trendy_luxury_chunky_heel_office_shoes_women_heels_pump_croc_422_5.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750097161/products/Japanese_bulk_trendy_shoes_custom_made_slippers_loafer_for_s_Japanese_bulk_trendy_shoes_custom_made_slippers_loafer_for_s_196_9.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750117424/products/Luxury_brand_Designer_boots_pink_green_women_shoes_croc_rain_Luxury_brand_Designer_boots_pink_green_women_shoes_croc_rain_49_4.jpg",
@@ -169,36 +169,37 @@ export default function Shoes() {
           padding: 18px 10px;
         }
 
-        /* Two columns layout: left and right columns stacked vertically
-           IMPORTANT: keep two columns ALWAYS (never collapse to single column).
-           This ensures a 2x4 layout even on narrow screens as requested.
+        /* Two-column grid that makes each row's cards equal height.
+           Using CSS Grid with grid-auto-rows: 1fr ensures items in the same row
+           match height (so cards align and the layout looks consistent regardless
+           of image proportions). We keep two columns on all screen sizes but reduce
+           the minimum column width on smaller screens so the grid remains stable.
         */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: 1fr 1fr; /* always two columns */
+          grid-template-columns: repeat(2, minmax(180px, 1fr)); /* always two columns */
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
+          grid-auto-rows: 1fr; /* equalize height across each grid row */
         }
 
-        /* Allow horizontal scrolling if the viewport gets so narrow the two columns don't fit.
-           This preserves the two-column requirement and avoids collapsing to 1 column.
+        /* For very narrow viewports reduce the min column width but keep two columns.
+           If the viewport is too narrow the grid will still try to fit two columns;
+           horizontal scroll will appear on extremely small devices preserving layout.
         */
         @media (max-width: 520px) {
           .two-column-vertical {
-            overflow-x: auto;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
             padding: 0 12px;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(240px, 1fr);
-            align-items: start;
+            overflow-x: auto;
           }
         }
 
-        /* Column container holds 4 stacked cards */
+        /* Column-stack removed; we render cards as grid items now.
+           Keep a helper class but make sure it's display:block so grid handles layout. */
         .column-stack {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
+          display: contents; /* allow grid to place individual card anchors directly */
         }
 
         /* Frame around each card to match screenshot look */
@@ -210,13 +211,12 @@ export default function Shoes() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          height: 100%;
+          height: 100%; /* important: stretch to fill the grid row height */
+          min-height: 260px;
         }
 
         /* Image wrapper now flexes to take remaining vertical space after the info (name/desc).
            The info block is non-flexing to allow the image to adapt to leftover space.
-           This makes the image always fit inside the card's remaining area after the text.
         */
         .shoe-image-wrap {
           width: 100%;
@@ -226,8 +226,8 @@ export default function Shoes() {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1 1 auto; /* <-- image area expands to fill remaining vertical space */
-          padding: 0; /* remove fixed aspect padding to allow flexible height */
+          flex: 1 1 auto; /* image area expands to fill remaining vertical space */
+          padding: 0;
         }
         /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
@@ -235,14 +235,14 @@ export default function Shoes() {
           max-height: 100%;
           width: auto;
           height: auto;
-          object-fit: contain; /* don't crop, fit within available space */
+          object-fit: contain;
           display: block;
         }
 
         .shoe-info {
           padding: 14px;
           background: #fff;
-          flex: 0 0 auto; /* <-- info won't flex; it takes only the space it needs */
+          flex: 0 0 auto; /* info takes only the space it needs */
         }
 
         .shoe-name {
@@ -326,50 +326,27 @@ export default function Shoes() {
           {total} products found.
         </div>
 
-        {/* Navy background strip with two vertical columns */}
+        {/* Navy background strip with two vertical columns (grid) */}
         <div className="shoes-grid-outer" aria-hidden="false">
           <div className="two-column-vertical">
-            {/* Left column: top-to-bottom (4 items) */}
-            <div className="column-stack" role="list">
-              {leftColumn.map((p) => (
-                <a
-                  key={p.id}
-                  href={`/shoes/${p.id}`}
-                  className="shoe-card-frame"
-                  role="listitem"
-                  title={`${p.name} — ${p.desc}`}
-                >
-                  <div className="shoe-image-wrap">
-                    <img src={p.img} alt={p.name} />
-                  </div>
-                  <div className="shoe-info">
-                    <h3 className="shoe-name">{p.name}</h3>
-                    <p className="shoe-desc">{p.desc}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-
-            {/* Right column: top-to-bottom (4 items) */}
-            <div className="column-stack" role="list">
-              {rightColumn.map((p) => (
-                <a
-                  key={p.id}
-                  href={`/shoes/${p.id}`}
-                  className="shoe-card-frame"
-                  role="listitem"
-                  title={`${p.name} — ${p.desc}`}
-                >
-                  <div className="shoe-image-wrap">
-                    <img src={p.img} alt={p.name} />
-                  </div>
-                  <div className="shoe-info">
-                    <h3 className="shoe-name">{p.name}</h3>
-                    <p className="shoe-desc">{p.desc}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
+            {/* Render up to 8 items for the current page in grid order (left-top -> right-top -> left-2 -> right-2 ...) */}
+            {pageProducts.map((p) => (
+              <a
+                key={p.id}
+                href={`/shoes/${p.id}`}
+                className="shoe-card-frame"
+                role="listitem"
+                title={`${p.name} — ${p.desc}`}
+              >
+                <div className="shoe-image-wrap">
+                  <img src={p.img} alt={p.name} />
+                </div>
+                <div className="shoe-info">
+                  <h3 className="shoe-name">{p.name}</h3>
+                  <p className="shoe-desc">{p.desc}</p>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
 
