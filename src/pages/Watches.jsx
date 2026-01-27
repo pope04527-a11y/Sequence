@@ -4,18 +4,6 @@ import "./Shoes.css";
 // Adjust the path if your image is in a different folder under src.
 import ShoesHero from "../assets/images/dashboard/Watches.png";
 
-/**
- * Watches page (kept filename Shoes.jsx for compatibility with your app)
- * - Replaced productUrls with the Watches URLs you provided.
- * - Keeps layout and behavior unchanged (two vertical columns, 8 items per page).
- * - Added runtime shuffle (same behavior as Apparel.jsx and Accessories.jsx).
- * - Adjusted image area so the image takes the remaining vertical space after name/description,
- *   using object-fit: contain so images never crop and always fit the leftover area.
- * - Ensures the page always displays 2x4; on extremely narrow viewports the grid scrolls horizontally
- *   rather than collapsing to a single column.
- * - Nothing else removed or changed from your original logic/markup.
- */
-
 /* Helper: build a friendly name from the Cloudinary filename */
 function friendlyNameFromUrl(url) {
   try {
@@ -105,7 +93,14 @@ const productsFromUrls = (urls) =>
     const name = friendlyNameFromUrl(url);
     const desc = (() => {
       const lower = name.toLowerCase();
-      if (lower.includes("watch") || lower.includes("omega") || lower.includes("tag") || lower.includes("rolex") || lower.includes("tissot") || lower.includes("timex")) {
+      if (
+        lower.includes("watch") ||
+        lower.includes("omega") ||
+        lower.includes("tag") ||
+        lower.includes("rolex") ||
+        lower.includes("tissot") ||
+        lower.includes("timex")
+      ) {
         return "High quality watch with excellent craftsmanship and design.";
       }
       return "High quality product with excellent comfort and design.";
@@ -119,8 +114,8 @@ const productsFromUrls = (urls) =>
     };
   });
 
-export default function Shoes() {
-  // Shuffle once on component mount (keeps behavior same as Apparel & Accessories)
+export default function Watches() {
+  // Shuffle once on component mount (keeps behavior same as other category pages)
   const shuffledUrls = useMemo(() => shuffleArray(productUrls), []);
   const products = useMemo(() => productsFromUrls(shuffledUrls), [shuffledUrls]);
 
@@ -183,7 +178,6 @@ export default function Shoes() {
           }
         }
 
-        /* column-stack remains for semantic grouping */
         .column-stack {
           display: flex;
           flex-direction: column;
@@ -260,23 +254,41 @@ export default function Shoes() {
           overflow: hidden;
         }
 
-        /* Pagination style */
+        /* Pagination: constrain to same max width as grid so it never overflows the page */
         .pagination-wrap {
-          display:flex;
-          justify-content:center;
-          padding: 22px 0 44px;
+          display: flex;
+          justify-content: center;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+
+        /* Keep the inner pagination content constrained and horizontally scrollable on very small viewports */
+        .pagination-inner {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          max-width: 1200px; /* same as grid */
+          width: 100%;
+          margin: 0 auto;
+          overflow-x: auto; /* allow scrolling when many page buttons exist */
+          -webkit-overflow-scrolling: touch;
+          padding: 6px;
+          box-sizing: border-box;
+        }
+
+        .pagination-inner::-webkit-scrollbar { height: 8px; } /* small scrollbar if visible */
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
@@ -306,8 +318,7 @@ export default function Shoes() {
             <h2 className="shoes-category">Watches</h2>
             <h1 className="shoes-title">Explore Our Collection For Watches</h1>
             <p className="shoes-subtitle">
-              Updated weekly with new flash sales from some of the world's best
-              brands.
+              Updated weekly with new flash sales from some of the world's best brands.
             </p>
           </div>
         </section>
@@ -364,40 +375,42 @@ export default function Shoes() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                onClick={() => goTo(n)}
+                className={n === currentPage ? "active" : ""}
+                aria-current={n === currentPage ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
