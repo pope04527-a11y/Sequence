@@ -71,14 +71,34 @@ function extractPriceFromText(text) {
   return "";
 }
 
-/* derive price from filename numbers as last resort */
+/* derive price from filename numbers as last resort
+   Updated behavior:
+   - Extract only the trailing numeric group from the filename (the last digits portion before the extension).
+   - Treat underscores inside that trailing group as the decimal separator location.
+     e.g. "578_16" => "578.16", "258_5" => "258.5", "1225" => "1225"
+   - Always return a currency-prefixed string (e.g. "£578.16") or empty string when not found.
+*/
 function heuristicPriceFromUrl(url) {
   if (!url) return "";
-  const m = url.match(/_(\d{2,4})(?:[_\.]|$)/);
-  if (m) {
-    return `£${m[1]}`;
+  try {
+    // get filename (last segment) and strip any query params
+    const lastSegment = (url.split("/").pop() || "").split("?")[0];
+    // remove extension
+    const filename = lastSegment.replace(/\.[^/.]+$/, "");
+    // match trailing digits and underscores (one or more digits possibly separated by underscores) at the end
+    const m = filename.match(/(\d+(?:_\d+)*)$/);
+    if (!m) return "";
+    const digitsGroup = m[1]; // e.g. "578_16" or "2310"
+    // split on underscores; first part is integer, rest are decimals; join decimals together
+    const parts = digitsGroup.split("_");
+    const integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? parts.slice(1).join("") : "";
+    const price = decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
+    // Normalize to avoid leading zeros or malformed numbers - but keep as string
+    return `£${price}`;
+  } catch (e) {
+    return "";
   }
-  return "";
 }
 
 /* Extract product info from the clicked anchor's DOM */
@@ -117,8 +137,14 @@ function extractProductFromAnchor(anchor) {
     // try to find currency in the anchor text
     price = extractPriceFromText(anchor.innerText || anchor.textContent || "");
   }
-  // last resort: from image url
-  if (!price && img) price = heuristicPriceFromUrl(img);
+
+  // Primary preference: if the image URL contains trailing digits, use those as the price.
+  // This ensures we always fetch the last digits in the filename as the product price
+  // (treating underscores inside that trailing group as decimal separators).
+  const urlDerivedPrice = img ? heuristicPriceFromUrl(img) : "";
+  if (urlDerivedPrice) {
+    price = urlDerivedPrice;
+  }
 
   if (!img && !name && !description && !price) return null;
 
