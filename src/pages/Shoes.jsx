@@ -4,16 +4,6 @@ import "./Shoes.css";
 // Adjust the path if your image is in a different folder under src.
 import ShoesHero from "../assets/images/dashboard/Shoes.png";
 
-/**
- * Shoes page — two vertical columns layout (4 items stacked top->bottom on left,
- * and 4 items stacked top->bottom on right) per page (8 items per page).
- *
- * Changes in this file:
- * - Products are shuffled at runtime (like Apparel.jsx and Accessories.jsx).
- * - Keeps the layout and the image-fit behaviour you liked (image area flexes, object-fit: contain).
- * - Rest of the logic, class names and markup left intact.
- */
-
 /* Helper: build a friendly name from the Cloudinary filename */
 function friendlyNameFromUrl(url) {
   try {
@@ -228,6 +218,7 @@ export default function Shoes() {
           justify-content: center;
           flex: 1 1 auto; /* image area expands to fill remaining vertical space */
           padding: 0;
+          min-height: 0;
         }
         /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
@@ -268,23 +259,41 @@ export default function Shoes() {
           overflow: hidden;
         }
 
-        /* Pagination style */
+        /* Pagination: constrain to same max width as grid so it never overflows the page */
         .pagination-wrap {
-          display:flex;
-          justify-content:center;
-          padding: 22px 0 44px;
+          display: flex;
+          justify-content: center;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+
+        /* Keep the inner pagination content constrained and horizontally scrollable on very small viewports */
+        .pagination-inner {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          max-width: 1200px; /* same as grid */
+          width: 100%;
+          margin: 0 auto;
+          overflow-x: auto; /* allow scrolling when many page buttons exist */
+          -webkit-overflow-scrolling: touch;
+          padding: 6px;
+          box-sizing: border-box;
+        }
+
+        .pagination-inner::-webkit-scrollbar { height: 8px; } /* small scrollbar if visible */
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
@@ -299,8 +308,7 @@ export default function Shoes() {
       `}</style>
 
       <main className="shoes-main">
-        {/* Hero Section: background now uses the imported Shoes.png asset (bundler-resolved)
-            Increased minHeight so the hero "card" is larger than product cards. */}
+        {/* Hero Section: background now uses the imported Shoes.png asset (bundler-resolved) */}
         <section
           className="shoes-hero"
           style={{
@@ -308,15 +316,14 @@ export default function Shoes() {
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            minHeight: "320px" // <-- increased height so hero is larger than product cards
+            minHeight: "320px"
           }}
         >
           <div className="shoes-hero-content" style={{ paddingTop: 80, paddingBottom: 80 }}>
             <h2 className="shoes-category">Shoes</h2>
             <h1 className="shoes-title">Explore Our Collection For Shoes</h1>
             <p className="shoes-subtitle">
-              Updated weekly with new flash sales from some of the world's best
-              brands.
+              Updated weekly with new flash sales from some of the world's best brands.
             </p>
           </div>
         </section>
@@ -329,7 +336,7 @@ export default function Shoes() {
         {/* Navy background strip with two vertical columns (grid) */}
         <div className="shoes-grid-outer" aria-hidden="false">
           <div className="two-column-vertical">
-            {/* Render up to 8 items for the current page in grid order (left-top -> right-top -> left-2 -> right-2 ...) */}
+            {/* Render up to 8 items for the current page in grid order */}
             {pageProducts.map((p) => (
               <a
                 key={p.id}
@@ -350,40 +357,42 @@ export default function Shoes() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                onClick={() => goTo(n)}
+                className={n === currentPage ? "active" : ""}
+                aria-current={n === currentPage ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
