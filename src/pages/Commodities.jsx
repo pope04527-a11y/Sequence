@@ -1,20 +1,9 @@
 import React, { useMemo, useState } from "react";
 import "./Shoes.css";
 // IMPORT the hero image from your src tree so the bundler resolves it correctly.
-// Adjust the path if your image is in a different folder under src.
 import ShoesHero from "../assets/images/dashboard/Commodities.png";
 
-/**
- * Commodities page
- * - Keeps original structure and class names used across category pages.
- * - Shuffles product URLs at runtime so the listing doesn't show grouped identical products,
- *   matching the behavior of Apparel, Accessories, Watches, Shoes, Electronics, Jewelry, Furniture.
- * - Image area now flexes to take the remaining vertical space after the name/description and
- *   uses object-fit: contain so images always fit inside the card without cropping.
- * - Two-column layout is preserved (2x4 per page). On very narrow viewports the grid will
- *   horizontally scroll instead of collapsing to one column to preserve the 2x4 layout.
- */
-
+/* Helper: friendly name */
 function friendlyNameFromUrl(url) {
   try {
     const parts = url.split("/");
@@ -31,6 +20,7 @@ function friendlyNameFromUrl(url) {
 
 /* Commodities product URLs provided by you */
 const productUrls = [
+  /* (list unchanged) */
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750094428/products/Electric_Mini_Smart_Car_Electric_Four-wheeler_New_Energy_Hom_Electric_Mini_Smart_Car_Electric_Four-wheeler_New_Energy_Hom_3069.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750094422/products/Electric_Hot_Water_Boiler_for_Bathroom_Smart_Kitchen_Applian_Electric_Hot_Water_Boiler_for_Bathroom_Smart_Kitchen_Applian_625_2.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750094414/products/Electric_Cooking_Home_Machine_And_Cooking_Pot_Making_Machine_Electric_Cooking_Home_Machine_And_Cooking_Pot_Making_Machine_527_99.jpg",
@@ -257,27 +247,26 @@ export default function Commodities() {
   return (
     <div className="shoes-bg">
       <style>{`
+        /* Navy strip behind the product grid */
         .shoes-grid-outer {
           background: #08223a;
           padding: 18px 10px;
         }
 
+        /* Two-column grid: keep two columns always while allowing min widths */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: 1fr 1fr; /* keep two columns */
+          grid-template-columns: repeat(2, minmax(180px, 1fr));
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
         }
 
-        /* On very narrow viewports allow horizontal scroll to preserve two-column layout */
         @media (max-width: 520px) {
           .two-column-vertical {
-            overflow-x: auto;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
             padding: 0 12px;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(240px, 1fr);
-            align-items: start;
+            overflow-x: auto;
           }
         }
 
@@ -287,6 +276,9 @@ export default function Commodities() {
           gap: 18px;
         }
 
+        /*
+          FIXED CARD HEIGHT:
+        */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -295,11 +287,19 @@ export default function Commodities() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          height: 100%;
+          height: 360px;
+          min-height: 360px;
+          max-height: 360px;
         }
 
-        /* Image area flexes to remaining vertical space, image fits without cropping */
+        /* Info area fixed so text cannot push the image area taller */
+        .shoe-info {
+          padding: 14px;
+          background: #fff;
+          flex: 0 0 92px; /* fixed info height */
+          box-sizing: border-box;
+        }
+
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -309,7 +309,8 @@ export default function Commodities() {
           align-items: center;
           justify-content: center;
           flex: 1 1 auto;
-          padding: 0;
+          min-height: 0; /* ensures flexbox can shrink properly */
+          padding: 6px;
         }
         .shoe-image-wrap img {
           max-width: 100%;
@@ -318,12 +319,6 @@ export default function Commodities() {
           height: auto;
           object-fit: contain;
           display: block;
-        }
-
-        .shoe-info {
-          padding: 14px;
-          background: #fff;
-          flex: 0 0 auto;
         }
 
         .shoe-name {
@@ -349,29 +344,49 @@ export default function Commodities() {
           overflow: hidden;
         }
 
+        /* Pagination: constrain to same max width as grid so it never overflows the page */
         .pagination-wrap {
-          display:flex;
-          justify-content:center;
-          padding: 22px 0 44px;
+          display: flex;
+          justify-content: center;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+
+        /* Keep the inner pagination content constrained and horizontally scrollable on very small viewports */
+        .pagination-inner {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          max-width: 1200px; /* same as grid */
+          width: 100%;
+          margin: 0 auto;
+          overflow-x: auto; /* allow scrolling when many page buttons exist */
+          -webkit-overflow-scrolling: touch;
+          padding: 6px;
+          box-sizing: border-box;
+        }
+
+        .pagination-inner::-webkit-scrollbar { height: 8px; } /* small scrollbar if visible */
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
         }
 
         @media (max-width: 520px) {
-          .shoe-card-frame { border-width: 4px; min-height: 220px; }
+          .shoe-card-frame { border-width: 4px; height: 320px; min-height: 320px; max-height: 320px; }
+          .shoe-info { flex: 0 0 88px; }
           .shoe-name { font-size: 15px; }
           .shoe-desc { font-size: 12px; }
         }
@@ -445,39 +460,42 @@ export default function Commodities() {
           </div>
         </div>
 
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                onClick={() => goTo(n)}
+                className={n === currentPage ? "active" : ""}
+                aria-current={n === currentPage ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
