@@ -146,46 +146,60 @@
 }
 
 /* --- Banner Section Continuous --- */
-/* Note: changed to use container-relative widths (100%) instead of 100vw to avoid horizontal shifting
-   when scrollbars appear. Banner is intentionally larger than regular section cards at all breakpoints. */
+/* Key goals:
+   - Banner image must fully fill (no empty top/bottom gaps) and animate through the card.
+   - Use object-fit: cover for full coverage while preserving aspect ratio.
+   - Use container-based widths (100%) not 100vw to avoid horizontal jitter when scrollbars appear.
+   - Keep banner visually larger than section cards.
+   - Ensure track stays underneath section overlays so they are never hidden.
+*/
 .banner-slider-container {
   width: 100%;
   min-height: 320px;
   position: relative;
   overflow: hidden;
   display: block;
-  z-index: 0; /* keep banner below sections so sections remain visible */
+  z-index: 0; /* keep banner beneath sections */
+  box-sizing: border-box;
+  padding: 12px;
 }
+
 .banner-slider-track-continuous {
   display: flex;
   flex-direction: row;
-  height: 320px;
+  height: 100%;
   will-change: transform;
   transform: translateX(0);
-  transition: transform 0.08s linear;
-  z-index: 0;
+  z-index: 0; /* keep transform track under sections */
 }
+
 .banner-slider-slide-continuous {
-  flex: 0 0 100%; /* occupy full container width */
+  flex: 0 0 100%;
   width: 100%;
-  height: 320px;
+  height: 100%;
   display: flex;
   align-items: stretch;
-  justify-content: stretch;
+  justify-content: center;
   box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
 }
+
+/* Use cover so the image fully covers the card area (no gaps).
+   This makes the image appear larger and ensures it animates fully through the card.
+*/
 .banner-slider-img {
   width: 100%;
-  max-width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
+  object-fit: cover; /* COVER prevents gaps up/down */
+  object-position: center center;
   display: block;
   user-select: none;
   pointer-events: none;
+  background: #fff;
 }
 
-/* Keep banner container visible and larger than section cards */
+/* Banner container default sizes (larger than section cards) */
 .dashboard-banner-section {
   position: relative;
   width: 100%;
@@ -196,35 +210,19 @@
   z-index: 0;
 }
 
-/* vertical spacing after the banner so sections don't butt against it */
+/* spacing under banner so next sections are clearly separated */
 .dashboard-banner-menu-spacing {
-  height: 32px;
+  height: 20px;
   width: 100%;
-}
-
-/* Breakpoint adjustments: banner remains larger than section cards */
-@media (max-width: 900px) {
-  .banner-slider-container,
-  .dashboard-banner-section { min-height: 220px; }
-  .banner-slider-track-continuous { height: 220px; }
-  .banner-slider-slide-continuous { height: 220px; }
-  .banner-slider-img { height: 220px; }
-  .dashboard-banner-menu-spacing { height: 18px; }
-}
-@media (max-width: 700px) {
-  /* increase mobile banner height so banner remains larger than section cards on phones */
-  .banner-slider-container,
-  .dashboard-banner-section { min-height: 200px; }
-  .banner-slider-track-continuous { height: 200px; }
-  .banner-slider-slide-continuous { height: 200px; }
-  .banner-slider-img { height: 200px; }
-  .dashboard-banner-menu-spacing { height: 12px; }
 }
 
 /* --- Menu Sections --- */
+/* Make sure sections remain exactly as before but slightly increase min-height so content always fits inside card.
+   Keep overlay and content centered within the section card on all devices.
+*/
 .dashboard-menu-section {
   width: 100%;
-  min-height: 210px;
+  min-height: 210px; /* base height for desktop */
   background-size: cover;
   background-position: center;
   margin: 0 auto;
@@ -235,7 +233,7 @@
   border-radius: 0;
   overflow: hidden;
   box-shadow: 0 2px 16px 0 #0003;
-  z-index: 2; /* ensure sections render above banner transform track */
+  z-index: 2; /* make sure sections sit above banner track */
 }
 .dashboard-menu-section:last-of-type {
   margin-bottom: 32px;
@@ -243,6 +241,8 @@
 .dashboard-menu-section.commodities-section {
   min-height: 320px;
 }
+
+/* overlay sits above the image but below text content; z-index ordering ensures overlay and content visible */
 .dashboard-menu-overlay {
   position: absolute;
   left: 0; top: 0; bottom: 0; right: 0;
@@ -252,9 +252,11 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(90deg, #12305c 0%, #12305c40 9%, #12305c00 24%);
-  z-index: 3; /* overlay and content above banner track */
+  z-index: 3;
   padding: 0;
 }
+
+/* center content and keep it inside the card even on narrow screens */
 .dashboard-menu-content {
   display: flex;
   flex-direction: column;
@@ -263,9 +265,10 @@
   min-width: 320px;
   max-width: 510px;
   gap: 13px;
-  z-index: 4; /* ensure text/button above overlay/banners */
+  z-index: 4;
   text-align: left;
   margin-left: 38px;
+  box-sizing: border-box;
 }
 .dashboard-menu-content-center {
   align-items: center;
@@ -276,19 +279,27 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  padding: 0 2rem; /* ensure title and button stay inset from edges */
+  box-sizing: border-box;
 }
+
+/* Title and description sizing; keep inside card and avoid overflow */
 .dashboard-menu-title {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 1.2px;
   color: #fff;
   font-family: inherit;
+  margin: 0;
 }
 .dashboard-menu-desc {
   font-size: 1.09rem;
   color: #e5eaf3;
   font-family: inherit;
+  margin: 0;
 }
+
+/* Button stays within the card; use transform translate to visually center while staying inside */
 .dashboard-menu-btn {
   background: #278ea5;
   color: #fff;
@@ -304,6 +315,7 @@
   text-decoration: none;
   display: inline-block;
   width: fit-content;
+  z-index: 4;
 }
 .dashboard-menu-btn:hover {
   background: #21e6c1;
@@ -514,32 +526,44 @@
     height: 38px;
     max-width: 110px;
   }
-  /* ensure banner remains prominent on tablet */
+  /* keep banner taller than sections on tablet but avoid clipping */
+  .banner-slider-container,
   .banner-slider-track-continuous,
   .banner-slider-slide-continuous,
-  .banner-slider-img { height: 260px; }
+  .banner-slider-img { min-height: 300px; height: 300px; }
 }
+
 @media (max-width: 900px) {
-  .dashboard-main-content { max-width: 100vw; padding: 0 2vw; }
-  .dashboard-menu-overlay { width: 100vw; min-width: 220px; max-width: 99vw; }
+  .dashboard-main-content { max-width: 100vw; padding: 0 4vw; }
+  .dashboard-menu-overlay { width: 100%; min-width: 220px; max-width: 100%; }
   .dashboard-brand-logo-row-scroll { min-height: 54px; }
   .dashboard-brand-logo-inner { gap: 12px; padding: 0 2vw; }
   .dashboard-brand-img { height: 32px; max-width: 90px; padding: 0 2px; }
+
+  /* mobile banner stays prominent but smaller than desktop */
+  .banner-slider-container,
   .banner-slider-track-continuous,
   .banner-slider-slide-continuous,
-  .banner-slider-img { height: 220px; min-width: 100%; max-width: 100%; }
+  .banner-slider-img { height: 240px; min-height: 240px; }
+
+  /* ensure section content fits and the discover button is inside the card */
+  .dashboard-menu-section { min-height: 200px; }
+  .dashboard-menu-content-center { padding: 0 4vw; width: 100%; box-sizing: border-box; }
+  .dashboard-menu-title { font-size: 1.25rem; }
+  .dashboard-menu-desc { font-size: 1rem; }
 }
+
 @media (max-width: 700px) {
-  .dashboard-menu-section { min-height: 130px; }
-  .dashboard-menu-overlay { padding: 8px 0 8px 0; width: 94vw; }
-  .dashboard-menu-content { min-width: 0; max-width: 99vw; margin-left: 0; }
-  .dashboard-menu-content-center { padding: 0 2vw; }
-  .dashboard-banner-title { font-size: 1.02rem; }
-  .dashboard-brand-logo-row-scroll { min-height: 38px; }
-  .dashboard-brand-logo-inner { gap: 8px; padding: 0 2vw; }
-  .dashboard-brand-img { height: 26px; max-width: 70px; padding: 0 1px; }
-  /* mobile banner increased so it remains larger than section cards and doesn't hide content */
+  .dashboard-menu-section { min-height: 180px; }
+  .dashboard-menu-overlay { padding: 8px 0; width: 100%; }
+  .dashboard-menu-content { min-width: 0; max-width: 100%; margin-left: 0; padding: 0 4vw; box-sizing: border-box; }
+  .dashboard-menu-content-center { padding: 0 4vw; }
+  .dashboard-banner-section { min-height: 200px; }
   .banner-slider-track-continuous,
   .banner-slider-slide-continuous,
-  .banner-slider-img { height: 200px; min-width: 100%; max-width: 100%; }
+  .banner-slider-img { height: 200px; min-height: 200px; }
+
+  .dashboard-menu-title { font-size: 1.2rem; line-height: 1.1; }
+  .dashboard-menu-desc { font-size: 0.96rem; }
+  .dashboard-menu-btn { padding: 10px 22px; font-size: 1rem; }
 }
