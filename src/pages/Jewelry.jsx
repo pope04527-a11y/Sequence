@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./Shoes.css";
 // IMPORT the hero image from your src tree so the bundler resolves it correctly.
-// Adjust the path if your image is in a different folder under src.
-import ShoesHero from "../assets/images/dashboard/Jewery.png";
+import JewelryHero from "../assets/images/dashboard/Jewery.png";
 
 /**
  * Jewelry page
@@ -75,8 +74,8 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300502/products/Murtoo_Viking_Bracelets_for_Men_The_Murtoo_Viking_Bracelet_f_Murtoo_Viking_Bracelets_for_Men_24_5.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300500/products/Large_Wedding_Band_with_Baguette_Round_Diamonds_in_18_kt_W_Present_her_with_a_diamond_surprise_on_that_special_day_with_Large_Wedding_Band_with_Baguette_Round_Diamonds_in_18_kt_W.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300498/products/Lanmi_Men_s_14K18K_Yellow_White_Gold_Natural_Emerald_Ring_Sa_Lanmi_Men_s_14K18K_Yellow_White_Gold_Natural_Emerald_Ring_Sa_5116.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300497/products/Ladybug_Flower_Clip-On_Earrings_Brilliantly_bejeweled_and_tr_Ladybug_Flower_Clip-On_Earrings_266.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300496/products/La4ve_Diamonds_12-3_00_Carat_14K_White_Gold_4_Prong_Set_Rou_Stunning_14k_White_Gold_Eye-catching_round_cut_lab-grown_dia_La4ve_Diamonds_12-3_00_Carat_14K_White_Gold_4_Prong_Set_Rou.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300497/products/Ladybug_Flower_Clip_On_Earrings_Brilliantly_bejeweled_and_tr_Ladybug_Flower_Clip_On_Earrings_266.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300496/products/La4ve_Diamonds_12-3_00_Carat_ctw_14K_White_Gold_4_Prong_Set_Rou_Stunning_14k_White_Gold_Eye-catching_round_cut_lab-grown_dia_La4ve_Diamonds_12-3_00_Carat_ctw_14K_White_Gold_4_Prong_Set_Rou.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300492/products/King_Will_Classic_Tungsten_Carbide_Ring_SilverBlackRedGreen_King_Will_Classic_Tungsten_Carbide_Ring_SilverBlackRedGreen_24.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300493/products/Kobelli_2_38_ct_tw_The_Pear_Hidden_Halo_Diamond_Ring_GIA_Ce_GIA_Certified_Pear_Diamond_Hidden_Halo_Design_Smooth_High-Po_Kobelli_2_38_ct_tw_The_Pear_Hidden_Halo_Diamond_Ring_GIA_Ce.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300495/products/LUXURMAN_Men_s_18K_Gold_Unique_4_Carat_Round_and_Oval_Diamon_LUXURMAN_Men_s_18K_Gold_Unique_4_Carat_Round_and_Oval_Diamon_44500.jpg",
@@ -85,7 +84,7 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300489/products/Jewels_By_Lux_10K_Yellow_Gold_Mens_Round_Diamond_Franco_Link_Find_the_perfect_jewelry_gifts_for_anyone_in_our_extensive_c_Jewels_By_Lux_10K_Yellow_Gold_Mens_Round_Diamond_Franco_Link.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300488/products/Jewelry_by_ARSA_Solid_14k_Two_Tone_Gold_Pendant_for_Women_Se_This_natural_sapphire_diamond_pendant_handcrafted_in_soli_Jewelry_by_ARSA_Solid_14k_Two_Tone_Gold_Pendant_for_Women_Se.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300487/products/Jewelry_Bliss_18k_White_Gold_Oval_Natural_Diamond_Halo_Engag_SHOES_APPAREL_ELECTRONICS_ACCESSORIES_JEWELRIES_WATCHES_FURN_Jewelry_Bliss_18k_White_Gold_Oval_Natural_Diamond_Halo_Engag.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300485/products/Jewelplus_Platinum_7_7mm_Solid_Cuban_Curb_Link_Chain_Bracele_Platinum_7_7mm_Solid_Cuban_Curb_Link_Chain_7_75_inch_Bracele_Jewelplus_Platinum_7_7mm_Solid_Cuban_Curb_Link_Chain_Bracele.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300485/products/Jewelplus_Platinum_7_7mm_Solid_Cuban_Curb_Link_Chain_Bracele_Platinum_7_7mm_Solid_Cuban_Curb_Link_Chain_Bracele.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300484/products/Jewelili_Enchanted_Disney_Fine_Jewelry_14K_White_Gold_and_Ro_Jewelili_Enchanted_Disney_Fine_Jewelry_14K_White_Gold_and_Ro_17121.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300483/products/Jewelili_Enchanted_Disney_Fine_Jewelry_10K_White_Gold_and_Ro_SHOES_APPAREL_ELECTRONICS_ACCESSORIES_JEWELRIES_WATCHES_FURN_3910.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300481/products/Jewelili_3_Pair_Box_Set_Stud_Earrings_with_White_Round_Cubic_Jewelili_3_Pair_Box_Set_Stud_Earrings_with_White_Round_Cubic_1673.jpg",
@@ -124,18 +123,6 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300437/products/Angara_Classic_Round_Shape_Lab-Grown_Emerald_Solitaire_Penda_Angara_Classic_Round_Shape_Lab-Grown_Emerald_Solitaire_Penda_62736.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300431/products/Amazon_Collection_Certified_14k_Gold_Round-Cut_Diamond_Stud_Amazon_Collection_Certified_14k_Gold_Round-Cut_Diamond_Stud_5173_7.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300430/products/AliveRose_Real_Rose_Gold_Dipped_Necklace_This_pendant_neckla_AliveRose_Real_Rose_Gold_Dipped_Necklace_7502.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300428/products/925_Sterling_Silver_Hoop_Earrings_for_Women_Teen_Girls_Smal_925_Sterling_Silver_Hoop_Earrings_for_Women_Teen_Girls_Smal_4_4.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300427/products/8_Carat_Diamond_Tennis_Bracelet_in_14K_Gold_7_Inch_Make_Her_8_Carat_Diamond_Tennis_Bracelet_in_14K_Gold_7_Inch_3149_99.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300426/products/6_75_Carat_Total_Weight_14k_White_Gold_U_Shape_Four_Prong_Na_REAL_DIAMOND_This_brand_new_ringwedding_band_consists_of_Nat_6_75_Carat_Total_Weight_14k_White_Gold_U_Shape_Four_Prong_Na.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300425/products/3_ct_Brilliant_Round_Cut_Genuine_Lab_grown_Diamond_Solitaire_3_ct_Brilliant_Round_Cut_Genuine_Lab_grown_Diamond_Solitaire_5829_79.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300424/products/3-30_Carat_ctw_White_Gold_Round_Cut_LAB_GROWN_Diamond_Neck_3-30_Carat_ctw_White_Gold_Round_Cut_LAB_GROWN_Diamond_Neck_21916.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300423/products/3-30_Carat_ctw_White_Gold_Pear_Cut_LAB_GROWN_Diamond_Neckl_3-30_Carat_ctw_White_Gold_Pear_Cut_LAB_GROWN_Diamond_Neckl_23838_46.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300422/products/3-30_Carat_ctw_White_Gold_Kite_Cut_LAB_GROWN_Diamond_Cross_3-30_Carat_ctw_White_Gold_Kite_Cut_LAB_GROWN_Diamond_Cross_28700.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300421/products/2ct_Round_Diamond_Solitaire_White_Gold_Engagement_Ring_Clas_We_are_a_leading_marketing_agency_that_utilizes_over_10_year_2ct_Round_Diamond_Solitaire_White_Gold_Engagement_Ring_Clas.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300419/products/2_07_Carat_Fancy_Intense_Yellow_Natural_Loose_Diamond_Cushio_A_lovely_Natural_Diamond_Yellow_color_VVS1_clarity_Cushion_s_2_07_Carat_Fancy_Intense_Yellow_Natural_Loose_Diamond_Cushio.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300418/products/2_05_ct_t_w_Ladies_Round_and_Baguette_Cut_Diamond_Cross_Pen_This_Diamond_Cross_Pendants_is_one_of_our_most_purchased_ite_2_05_ct_t_w_Ladies_Round_and_Baguette_Cut_Diamond_Cross_Pen.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300417/products/2_00_Cts_Black_Diamond_Jewelry_Set_in_Platinum_This_extraord_This_extraordinary_Black_Diamond_Jewelry_Set_exhibits_a_soli_2_00_Cts_Black_Diamond_Jewelry_Set_in_Platinum.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300416/products/1_to_5_Carat_14K_Gold_Round_White_Diamond_Ladies_Huggies_Hoo_1_to_5_Carat_14K_Gold_Round_White_Diamond_Ladies_Huggies_Hoo_5139_99.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300414/products/1928_Jewelry_3_Sided_Flower_Spinner_Locket_Pendant_Necklace_1924.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300413/products/18K_YellowWhiteRose_Gold_By_The_Yard_Necklace_With_1_38_TCW_NATURAL_DIAMONDS_All_our_diamonds_and_their_colors_are_compl_18K_YellowWhiteRose_Gold_By_The_Yard_Necklace_With_1_38_TCW.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300412/products/18K_Gold_Necklace_Gold_Chunky_Necklace_Gold_Horseshoe_Neck_18K_Gold_Necklace_Gold_Chunky_Necklace_Gold_Horseshoe_Neck_3750.jpg",
@@ -210,13 +197,13 @@ const productsFromUrls = (urls) =>
     };
   });
 
-export default function Shoes() {
+export default function Jewelry() {
   // Shuffle once on component mount (consistent with other pages)
   const shuffledUrls = useMemo(() => shuffleArray(productUrls), []);
   const products = useMemo(() => productsFromUrls(shuffledUrls), [shuffledUrls]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8; // exactly 8 products per page (4 up-down left, 4 up-down right)
+  const pageSize = 8; // exactly 8 products per page (2 columns x 4 rows)
   const total = products.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -224,10 +211,6 @@ export default function Shoes() {
     const start = (currentPage - 1) * pageSize;
     return products.slice(start, start + pageSize);
   }, [currentPage, products]);
-
-  // split into two vertical columns: left (items 0-3) and right (items 4-7)
-  const leftColumn = pageProducts.slice(0, 4);
-  const rightColumn = pageProducts.slice(4, 8);
 
   const goTo = (page) => {
     const p = Math.max(1, Math.min(totalPages, page));
@@ -257,36 +240,31 @@ export default function Shoes() {
           padding: 18px 10px;
         }
 
-        /* Two columns layout: left and right columns stacked vertically
-           IMPORTANT: keep two columns ALWAYS (never collapse to single column).
+        /* Two-column grid that makes each row's cards equal height.
+           Using CSS Grid with grid-auto-rows: 1fr ensures items in the same row
+           match height (so cards align and the layout looks consistent regardless
+           of image proportions). We keep two columns on all screen sizes but reduce
+           the minimum column width on smaller screens so the grid remains stable.
         */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: 1fr 1fr; /* always two columns */
+          grid-template-columns: repeat(2, minmax(180px, 1fr)); /* always two columns */
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
+          grid-auto-rows: 1fr; /* equalize height across each grid row */
         }
 
-        /* Allow horizontal scrolling if the viewport gets very narrow so we never collapse to 1 column */
         @media (max-width: 520px) {
           .two-column-vertical {
-            overflow-x: auto;
+            grid-template-columns: repeat(2, minmax(140px, 1fr));
             padding: 0 12px;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(240px, 1fr);
-            align-items: start;
+            overflow-x: auto;
           }
         }
 
-        /* Column container holds 4 stacked cards */
-        .column-stack {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
+        .column-stack { display: contents; }
 
-        /* Frame around each card to match screenshot look */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -295,14 +273,10 @@ export default function Shoes() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          height: 100%;
+          height: 100%; /* important: stretch to fill the grid row height */
+          min-height: 260px;
         }
 
-        /* Image wrapper now flexes to take remaining vertical space after the info (name/desc).
-           The info block is non-flexing so it occupies only the height it needs.
-           This ensures images always fit within the leftover space of the card.
-        */
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -312,22 +286,21 @@ export default function Shoes() {
           align-items: center;
           justify-content: center;
           flex: 1 1 auto; /* image area expands to fill remaining vertical space */
-          padding: 0; /* remove fixed aspect padding to allow flexible height */
+          padding: 0;
         }
-        /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
           width: auto;
           height: auto;
-          object-fit: contain; /* do not crop; fit inside available space */
+          object-fit: contain;
           display: block;
         }
 
         .shoe-info {
           padding: 14px;
           background: #fff;
-          flex: 0 0 auto; /* info won't flex; it takes only the space it needs */
+          flex: 0 0 auto;
         }
 
         .shoe-name {
@@ -375,7 +348,6 @@ export default function Shoes() {
           border-color: #1e90ff;
         }
 
-        /* Extra small screens: reduce frame thickness and font sizes */
         @media (max-width: 520px) {
           .shoe-card-frame { border-width: 4px; min-height: 220px; }
           .shoe-name { font-size: 15px; }
@@ -384,11 +356,11 @@ export default function Shoes() {
       `}</style>
 
       <main className="shoes-main">
-        {/* Hero Section: background uses the imported Jewery.png asset */}
+        {/* Hero Section */}
         <section
           className="shoes-hero"
           style={{
-            backgroundImage: `url(${ShoesHero})`,
+            backgroundImage: `url(${JewelryHero})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -404,59 +376,32 @@ export default function Shoes() {
           </div>
         </section>
 
-        {/* Products found row */}
         <div style={{ maxWidth: "1200px", margin: "10px auto 6px", padding: "0 12px", color: "#071e3d", fontWeight: 700 }}>
           {total} products found.
         </div>
 
-        {/* Navy background strip with two vertical columns */}
         <div className="shoes-grid-outer" aria-hidden="false">
           <div className="two-column-vertical">
-            {/* Left column: top-to-bottom (4 items) */}
-            <div className="column-stack" role="list">
-              {leftColumn.map((p) => (
-                <a
-                  key={p.id}
-                  href={`/shoes/${p.id}`}
-                  className="shoe-card-frame"
-                  role="listitem"
-                  title={`${p.name} — ${p.desc}`}
-                >
-                  <div className="shoe-image-wrap">
-                    <img src={p.img} alt={p.name} />
-                  </div>
-                  <div className="shoe-info">
-                    <h3 className="shoe-name">{p.name}</h3>
-                    <p className="shoe-desc">{p.desc}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
-
-            {/* Right column: top-to-bottom (4 items) */}
-            <div className="column-stack" role="list">
-              {rightColumn.map((p) => (
-                <a
-                  key={p.id}
-                  href={`/shoes/${p.id}`}
-                  className="shoe-card-frame"
-                  role="listitem"
-                  title={`${p.name} — ${p.desc}`}
-                >
-                  <div className="shoe-image-wrap">
-                    <img src={p.img} alt={p.name} />
-                  </div>
-                  <div className="shoe-info">
-                    <h3 className="shoe-name">{p.name}</h3>
-                    <p className="shoe-desc">{p.desc}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
+            {pageProducts.map((p) => (
+              <a
+                key={p.id}
+                href={`/jewelry/${p.id}`}
+                className="shoe-card-frame"
+                role="listitem"
+                title={`${p.name} — ${p.desc}`}
+              >
+                <div className="shoe-image-wrap">
+                  <img src={p.img} alt={p.name} />
+                </div>
+                <div className="shoe-info">
+                  <h3 className="shoe-name">{p.name}</h3>
+                  <p className="shoe-desc">{p.desc}</p>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
 
-        {/* Pagination */}
         <div className="pagination-wrap" aria-label="Pagination">
           <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
             {"<"}
