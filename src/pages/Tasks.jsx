@@ -14,8 +14,10 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Make the top progress line fully green across the page (fill spans 100%).
   - Use API_BASE (http://localhost:3002 by default).
   - Send devUsername in the request body (avoids CORS preflight for custom headers).
-  - "Chat with us" link in the support block now opens the Customer Service modal (dispatches openCustomerService)
-    instead of navigating to a page.
+  - After a successful task submission we now immediately call refreshProfile()
+    so balance and commission values in the global balance context update right away
+    (no manual page refresh required). The local derived state `localCommissionToday`
+    will be updated via the existing effect that watches `commissionToday`.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -357,7 +359,12 @@ export default function Tasks() {
         setCurrentTask(backendTask);
         setShowModal(true);
         setSubmitState("");
-        refreshProfile && refreshProfile();
+        // refresh profile proactively so balance/commission are current when task starts
+        try {
+          refreshProfile && refreshProfile();
+        } catch (e) {
+          // noop
+        }
         return;
       }
 
@@ -376,11 +383,24 @@ export default function Tasks() {
       const result = await submitTaskRecord(currentTask.taskCode);
       if (result.success) {
         setSubmitState("submitted");
+
+        // Immediately refresh the user's profile so balance and commission values update right away.
+        // refreshProfile is provided by the balance context; call it if available.
+        try {
+          const maybe = refreshProfile && refreshProfile();
+          // If refreshProfile returns a promise, await it to ensure data is refreshed before continuing.
+          if (maybe && typeof maybe.then === "function") await maybe;
+        } catch (e) {
+          // ignore errors in profile refresh - UI will still continue
+        }
+
         setTimeout(() => {
           setShowModal(false);
           setCurrentTask(null);
           setSubmitState("");
           setFadeSpinner(true);
+
+          // fadeSpinner will be hidden below; we keep the navigate to /tasks as before.
           setTimeout(() => {
             setFadeSpinner(false);
             navigate("/tasks");
