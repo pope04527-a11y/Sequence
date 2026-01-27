@@ -80,19 +80,24 @@ export default function Footer() {
     height: 40,
   };
 
-  // COPYRIGHT: make it a single small line, left, no wrapping.
+  // COPYRIGHT: make it centered horizontally and vertically within its reserved space.
+  // Adjust padding and alignment so the copyright sits visually in the middle of the footer area,
+  // not pinned to the bottom edge.
   const copyrightRowStyle = {
     display: "flex",
-    justifyContent: "left",
-    alignItems: "center",
+    justifyContent: "center", // center horizontally
+    alignItems: "center",     // center vertically within the row
     gap: "20px",
     marginTop: "0.25rem",
-    paddingTop: "2rem",
+    paddingTop: "1rem",       // provide space above to balance visual center
+    paddingBottom: "1rem",    // provide space below to balance visual center
     whiteSpace: "nowrap", // prevent wrapping to multiple lines
     overflow: "hidden",
     textOverflow: "ellipsis",
     fontSize: "14px", // very small as requested
     lineHeight: 1,
+    width: "100%",
+    boxSizing: "border-box",
   };
 
   const footerLogoSmallStyle = {
