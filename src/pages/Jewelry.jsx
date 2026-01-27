@@ -3,19 +3,6 @@ import "./Shoes.css";
 // IMPORT the hero image from your src tree so the bundler resolves it correctly.
 import JewelryHero from "../assets/images/dashboard/Jewery.png";
 
-/**
- * Jewelry page
- * - Keeps original structure and class names.
- * - Ensures the page behaves like the other category pages:
- *   * Two columns always (2x4 per page). On extremely narrow viewports the grid scrolls horizontally
- *     instead of collapsing to a single column.
- *   * Image area flexes to take the remaining vertical space after the name/description.
- *   * Images use object-fit: contain so they always fit inside the available area (no cropping).
- *   * Product URLs are shuffled at runtime (consistent with Apparel, Accessories, Watches, Shoes).
- * - Additional change: card height is fixed so a single tall product does NOT stretch other cards.
- *   The image area will scale/contain within the fixed box and the text area is constrained.
- */
-
 /* Helper: build a friendly name from the Cloudinary filename */
 function friendlyNameFromUrl(url) {
   try {
@@ -136,7 +123,7 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300410/products/14kt_Solid_Gold_Cross_Necklace_for_Women_Real_Gold_Classic_14kt_Solid_Gold_Cross_Necklace_for_Women_Real_Gold_Classic_227.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300406/products/14K_REAL_Yellow_Gold_5_00mm_Shiny_SOLID_Diamond-Cut_Round_Fr.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300405/products/14KY_14mm_Cuban_WP_Chain_for_Women_and_Men_14K_Solid_Gold_L_14KY_14mm_Cuban_WP_Chain_for_Women_and_Men_14K_Solid_Gold_L_13300_47.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300404/products/12X10_MM_Size_Sparkling_Oval_Ruby_Halo_Earring_with_Diamond.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300404/products/12X10_MM_Size_Sparkling_Oval_Ruby_Halo_Earring.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300403/products/12-16MM_Ethiopian_Opal_90Pcs_Cabochon_AAA_Quality_Ethiopian.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300401/products/10_00_Carat_Handcrafted_Finger_Ring_Zircon_is_highly_recomme_Zircon_is_highly_recommended_for_people_who_want_peace_in_th_10_00_Carat_Handcrafted_Finger_Ring.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300400/products/1_11Cts_Mix_of_Fancy_Color_Loose_Diamond_Natural_Color_Heart.jpg",
@@ -213,6 +200,10 @@ export default function Jewelry() {
     return products.slice(start, start + pageSize);
   }, [currentPage, products]);
 
+  // split into two vertical columns: left (items 0-3) and right (items 4-7)
+  const leftColumn = pageProducts.slice(0, 4);
+  const rightColumn = pageProducts.slice(4, 8);
+
   const goTo = (page) => {
     const p = Math.max(1, Math.min(totalPages, page));
     setCurrentPage(p);
@@ -241,32 +232,35 @@ export default function Jewelry() {
           padding: 18px 10px;
         }
 
-        /* Two-column grid that makes each row's cards equal height.
-           Use a fixed card height so a single tall product doesn't stretch the row.
-        */
+        /* Two-column grid that keeps two columns always and ensures equal-height cards */
         .two-column-vertical {
           display: grid;
-          grid-template-columns: repeat(2, minmax(180px, 1fr)); /* always two columns */
+          grid-template-columns: 1fr 1fr; /* always two columns */
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
         }
 
+        /* On very narrow viewports allow horizontal scrolling to preserve the 2x4 layout */
         @media (max-width: 520px) {
           .two-column-vertical {
-            grid-template-columns: repeat(2, minmax(140px, 1fr));
-            padding: 0 12px;
             overflow-x: auto;
+            padding: 0 12px;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(240px, 1fr);
+            align-items: start;
           }
         }
 
-        .column-stack { display: contents; }
+        .column-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
 
         /*
          FIXED CARD HEIGHT:
-         - Set a fixed card height (matches Shoes layout sizing).
-         - The image area will be constrained inside the fixed box and keep object-fit: contain.
-         - The info block height is fixed so text won't push the image area larger.
+         - Keep cards identical height so a single tall image/title can't stretch the row.
         */
         .shoe-card-frame {
           border: 8px solid #071e2f;
@@ -276,24 +270,19 @@ export default function Jewelry() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-
-          /* fixed height so all cards are identical regardless of content */
           height: 360px;
           min-height: 360px;
           max-height: 360px;
         }
 
-        /* Info area has a fixed height so it cannot push the card taller */
+        /* Info area fixed so text cannot push the image area taller */
         .shoe-info {
           padding: 14px;
           background: #fff;
-          flex: 0 0 92px; /* fixed info height (approx same as Shoes layout) */
+          flex: 0 0 92px;
           box-sizing: border-box;
         }
 
-        /* Image wrapper occupies the remaining fixed space and centers the image.
-           Use min-height:0 so flexbox shrinks correctly on some browsers.
-        */
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -306,8 +295,6 @@ export default function Jewelry() {
           min-height: 0;
           padding: 6px;
         }
-
-        /* Ensure image always fits inside its area and cannot overflow the fixed card height. */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
@@ -340,23 +327,37 @@ export default function Jewelry() {
           overflow: hidden;
         }
 
-        /* Pagination style */
+        /* Pagination: constrained and horizontally scrollable on small viewports */
         .pagination-wrap {
           display:flex;
           justify-content:center;
-          padding: 22px 0 44px;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+        .pagination-inner {
+          display:inline-flex;
+          gap:10px;
+          align-items:center;
+          max-width:1200px;
+          width:100%;
+          margin:0 auto;
+          overflow-x:auto;
+          -webkit-overflow-scrolling:touch;
+          padding:6px;
+          box-sizing:border-box;
+        }
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
@@ -371,7 +372,7 @@ export default function Jewelry() {
       `}</style>
 
       <main className="shoes-main">
-        {/* Hero Section */}
+        {/* Hero */}
         <section
           className="shoes-hero"
           style={{
@@ -385,9 +386,7 @@ export default function Jewelry() {
           <div className="shoes-hero-content" style={{ paddingTop: 80, paddingBottom: 80 }}>
             <h2 className="shoes-category">Jewelry</h2>
             <h1 className="shoes-title">Explore Our Collection For Jewelry</h1>
-            <p className="shoes-subtitle">
-              Updated weekly with new arrivals and curated selections.
-            </p>
+            <p className="shoes-subtitle">Updated weekly with new arrivals and curated selections.</p>
           </div>
         </section>
 
@@ -397,59 +396,67 @@ export default function Jewelry() {
 
         <div className="shoes-grid-outer" aria-hidden="false">
           <div className="two-column-vertical">
-            {pageProducts.map((p) => (
-              <a
-                key={p.id}
-                href={`/jewelry/${p.id}`}
-                className="shoe-card-frame"
-                role="listitem"
-                title={`${p.name} — ${p.desc}`}
-              >
-                <div className="shoe-image-wrap">
-                  <img src={p.img} alt={p.name} />
-                </div>
-                <div className="shoe-info">
-                  <h3 className="shoe-name">{p.name}</h3>
-                  <p className="shoe-desc">{p.desc}</p>
-                </div>
-              </a>
-            ))}
+            <div className="column-stack" role="list">
+              {leftColumn.map((p) => (
+                <a key={p.id} href={`/jewelry/${p.id}`} className="shoe-card-frame" role="listitem" title={`${p.name} — ${p.desc}`}>
+                  <div className="shoe-image-wrap">
+                    <img src={p.img} alt={p.name} />
+                  </div>
+                  <div className="shoe-info">
+                    <h3 className="shoe-name">{p.name}</h3>
+                    <p className="shoe-desc">{p.desc}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <div className="column-stack" role="list">
+              {rightColumn.map((p) => (
+                <a key={p.id} href={`/jewelry/${p.id}`} className="shoe-card-frame" role="listitem" title={`${p.name} — ${p.desc}`}>
+                  <div className="shoe-image-wrap">
+                    <img src={p.img} alt={p.name} />
+                  </div>
+                  <div className="shoe-info">
+                    <h3 className="shoe-name">{p.name}</h3>
+                    <p className="shoe-desc">{p.desc}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button key={n} onClick={() => goTo(n)} className={n === currentPage ? "active" : ""} aria-current={n === currentPage ? "page" : undefined}>
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
