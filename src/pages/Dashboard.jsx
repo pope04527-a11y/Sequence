@@ -154,13 +154,13 @@ function BannerSlider() {
   useEffect(() => {
     let animationFrameId;
     let start;
-    // keep original subjective pxPerSec speed so loop appears identical
-    let pxPerSec = 40;
+    // keep same speed used previously so continuous effect looks identical
+    const pxPerSec = 40;
     let trackWidth = 0;
 
     function setTrackWidth() {
       if (trackRef.current) {
-        // compute half of scrollWidth to match duplicated slides logic
+        // calculate half the total width (because slides are duplicated)
         trackWidth = Math.max(1, trackRef.current.scrollWidth / 2);
       }
     }
@@ -173,7 +173,7 @@ function BannerSlider() {
       const elapsed = (ts - start) / 1000;
       const px = (elapsed * pxPerSec) % trackWidth;
       if (trackRef.current) {
-        // use transform without abrupt jumps to preserve continuous effect
+        // only translateX, avoid translateY or scaling to keep layout stable
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
       animationFrameId = requestAnimationFrame(animateBanner);
@@ -190,25 +190,26 @@ function BannerSlider() {
   const allSlides = [...bannerSlides, ...bannerSlides];
 
   return (
-    <section className="dashboard-banner-section banner-slider-container">
-      {/* Inline styles applied only to the banner to increase its visual prominence and ensure responsive behavior.
-          Notes:
-          - Banner images are larger than the regular section cards.
-          - Use object-fit: cover to keep images filling the banner area while preserving focal center.
-          - Ensure banner remains responsive and does not cause other content to be hidden on narrow screens.
-          - Continuous loop is preserved via duplicated slides + transform animation above.
+    <section className="dashboard-banner-section banner-slider-container" aria-label="Banner slider">
+      {/* Banner-specific inline CSS:
+          - larger responsive heights for banner images (bigger than section cards).
+          - object-fit: cover so banner images fill their card area and keep focus center.
+          - overflow:hidden on container to prevent horizontal/vertical overflow.
+          - ensure track transform does not create overlap hiding subsequent sections: the track has z-index:0 and sections are set to z-index:1 (below we set section stacking to keep them visible).
       */}
       <style>{`
         .banner-slider-container {
           box-sizing: border-box;
-          padding: 10px 12px;
+          padding: 12px 12px 6px 12px;
           width: 100%;
+          overflow: hidden; /* keep banner contained in flow */
         }
 
         .banner-slider-track-continuous {
           display: flex;
           align-items: center;
-          /* ensure track uses full width and can transform smoothly */
+          /* transformed element; keep stacking low so subsequent sections remain visible */
+          z-index: 0;
           will-change: transform;
         }
 
@@ -216,29 +217,24 @@ function BannerSlider() {
           flex: 0 0 100%;
           width: 100%;
           box-sizing: border-box;
-          padding: 0;
+          padding: 0 0;
         }
 
-        /* Banner image styling: larger than section cards but responsive.
-           object-fit: cover keeps the image filling the banner area while centering the important parts.
-        */
         .banner-slider-slide-continuous .banner-slider-img {
           width: 100%;
-          height: 320px; /* mobile baseline - larger than regular section cards on mobile */
+          height: 320px; /* mobile baseline taller than standard section cards */
           object-fit: cover;
           object-position: center;
           display: block;
-          border-radius: 4px;
+          border-radius: 6px;
         }
 
-        /* Slightly taller on small tablets */
         @media (min-width: 520px) {
           .banner-slider-slide-continuous .banner-slider-img {
             height: 360px;
           }
         }
 
-        /* Desktop and large screens: more prominent banner height */
         @media (min-width: 900px) {
           .banner-slider-slide-continuous .banner-slider-img {
             height: 420px;
@@ -251,14 +247,16 @@ function BannerSlider() {
           }
         }
 
-        /* Prevent the banner from collapsing or hiding subsequent content on very small viewports */
-        .banner-slider-container {
-          overflow: visible;
+        /* Prevent the transformed track from hiding subsequent content:
+           make sure regular sections are positioned above the banner track */
+        .dashboard-menu-section {
+          position: relative;
+          z-index: 1;
         }
 
-        /* Keep spacing consistent so the regular section cards remain visible and unchanged below */
-        .dashboard-banner-section + .dashboard-banner-menu-spacing {
-          height: 18px;
+        /* Small spacer under banner so next sections don't butt up directly */
+        .dashboard-banner-menu-spacing {
+          height: 16px;
         }
       `}</style>
 
@@ -285,7 +283,7 @@ export default function Dashboard() {
       <Sidebar open={sidebarOpen} onClose={handleSidebarClose} />
       <main className="dashboard-main-content">
         <BannerSlider />
-        <div className="dashboard-banner-menu-spacing"></div>
+        <div className="dashboard-banner-menu-spacing" />
         {dashboardSections.map((section, i) => (
           <section
             className={`dashboard-menu-section${section.title === "COMMODITIES" ? " commodities-section" : ""}`}
