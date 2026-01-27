@@ -159,7 +159,8 @@ function BannerSlider() {
 
     function setTrackWidth() {
       if (trackRef.current) {
-        trackWidth = trackRef.current.scrollWidth / 2;
+        // compute half width for continuous sliding (we duplicate slides)
+        trackWidth = trackRef.current.scrollWidth / 2 || 0;
       }
     }
 
@@ -169,7 +170,7 @@ function BannerSlider() {
     function animateBanner(ts) {
       if (!start) start = ts;
       const elapsed = (ts - start) / 1000;
-      const px = (elapsed * pxPerSec) % trackWidth;
+      const px = trackWidth ? (elapsed * pxPerSec) % trackWidth : 0;
       if (trackRef.current) {
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
@@ -186,12 +187,46 @@ function BannerSlider() {
 
   const allSlides = [...bannerSlides, ...bannerSlides];
 
+  // Make banner card visually larger than other sections while remaining responsive.
+  // Use clamp so it scales on mobile/desktop: at least 280px, prefers 36vh, max 520px.
+  const bannerContainerStyle = {
+    minHeight: "clamp(280px, 36vh, 520px)",
+    height: "auto",
+    overflow: "hidden",
+    position: "relative",
+    margin: "0 auto",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    padding: "18px 0", // add spacing same as other sections but larger visual area
+  };
+
+  const trackStyle = {
+    display: "flex",
+    alignItems: "stretch",
+    height: "100%",
+    willChange: "transform",
+  };
+
+  const slideStyle = {
+    flex: "0 0 100%",
+    height: "100%",
+    boxSizing: "border-box",
+    position: "relative",
+  };
+
+  const imgStyle = {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover", // fill the increased banner area responsively
+    display: "block",
+  };
+
   return (
-    <section className="dashboard-banner-section banner-slider-container">
-      <div className="banner-slider-track-continuous" ref={trackRef}>
+    <section className="dashboard-banner-section banner-slider-container" style={bannerContainerStyle}>
+      <div className="banner-slider-track-continuous" ref={trackRef} style={trackStyle}>
         {allSlides.map((slide, i) => (
-          <div className="banner-slider-slide-continuous" key={i}>
-            <img src={slide.img} alt={`Banner ${i + 1}`} className="banner-slider-img" draggable={false} />
+          <div className="banner-slider-slide-continuous" key={i} style={slideStyle}>
+            <img src={slide.img} alt={`Banner ${i + 1}`} className="banner-slider-img" draggable={false} style={imgStyle} />
           </div>
         ))}
       </div>
