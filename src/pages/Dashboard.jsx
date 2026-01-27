@@ -191,17 +191,17 @@ function BannerSlider() {
   return (
     <section className="dashboard-banner-section banner-slider-container" aria-label="Banner slider">
       <style>{`
-        /* Banner is intentionally larger than standard section cards and fully responsive.
-           Key points implemented:
-           - Each slide occupies 100% of the banner container (no vw usage) so the animation stays aligned.
-           - The image uses object-fit: contain so the full image fits within the card (no cropped portions).
-           - The track is transformed (translateX) for smooth continuous looping.
-           - Sections below are forced to render above the track (z-index) so they are never hidden.
+        /* Banner adjustments so the image covers entire card height and stretches edge-to-edge like other sections.
+           Changes made here:
+           - Remove internal padding so banner aligns flush with other full-width sections.
+           - Each slide occupies full container width and height.
+           - Image uses object-fit: cover so there are no top/bottom gaps and it fully fills the banner card.
+           - Keep continuous animation via translateX on the track (unchanged).
         */
 
         .banner-slider-container {
           box-sizing: border-box;
-          padding: 12px 12px 6px 12px;
+          padding: 0; /* remove padding so banner is flush */
           width: 100%;
           overflow: hidden;
           z-index: 0;
@@ -209,66 +209,68 @@ function BannerSlider() {
 
         .banner-slider-track-continuous {
           display: flex;
-          align-items: center;
+          align-items: stretch;
           width: 100%;
           will-change: transform;
-          z-index: 0; /* keep track beneath section overlays so sections are always visible */
+          z-index: 0;
         }
 
-        /* Each slide fills the banner container (so a whole image enters the card as the track moves) */
         .banner-slider-slide-continuous {
           flex: 0 0 100%;
           width: 100%;
+          height: 100%;
+          display: block;
           box-sizing: border-box;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0;
+          overflow: hidden;
         }
 
-        /* Ensure the full image fits inside the card (no cropping). On very wide displays the image will
-           scale up while maintaining aspect ratio; on narrow screens it will scale down — but always fully visible.
-           The track movement slides the entire image in and out of view (whole-image sliding).
+        /* Make the image fill the slide area completely without gaps.
+           object-fit: cover ensures image covers the full area while preserving aspect ratio.
         */
         .banner-slider-slide-continuous .banner-slider-img {
           width: 100%;
           height: 100%;
-          max-height: 460px; /* upper bound for large screens */
-          object-fit: contain; /* show the entire image inside the card */
-          object-position: center;
+          object-fit: cover;
+          object-position: center center;
           display: block;
-          background: #fff; /* preserves neutral backdrop when images have transparent areas */
           user-select: none;
           pointer-events: none;
         }
 
-        /* Banner heights: larger than the section cards at all breakpoints */
-        .banner-slider-container { min-height: 320px; }
-        .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 320px; }
+        /* Banner height settings (larger than other section cards)
+           - Desktop: taller
+           - Tablet: medium
+           - Mobile: still larger than the regular cards but not excessive
+        */
+        .dashboard-banner-section { min-height: 320px; height: auto; }
+        .banner-slider-track-continuous,
+        .banner-slider-slide-continuous { height: 320px; }
 
         @media (min-width: 900px) {
-          .banner-slider-container { min-height: 420px; }
-          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 420px; }
-          .banner-slider-slide-continuous .banner-slider-img { max-height: 460px; }
+          .banner-slider-track-continuous,
+          .banner-slider-slide-continuous { height: 420px; }
+          .dashboard-banner-section { min-height: 420px; }
         }
 
         @media (max-width: 900px) {
-          .banner-slider-container { min-height: 260px; }
-          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 260px; }
+          .banner-slider-track-continuous,
+          .banner-slider-slide-continuous { height: 260px; }
+          .dashboard-banner-section { min-height: 260px; }
         }
 
         @media (max-width: 700px) {
-          .banner-slider-container { min-height: 200px; }
-          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 200px; }
+          .banner-slider-track-continuous,
+          .banner-slider-slide-continuous { height: 200px; }
+          .dashboard-banner-section { min-height: 200px; }
         }
 
-        /* Ensure other section cards and their overlay content remain above the banner transform track */
+        /* Ensure subsequent sections render above the track so they remain fully visible */
         .dashboard-menu-section { z-index: 2; position: relative; }
         .dashboard-menu-overlay { z-index: 3; position: absolute; }
         .dashboard-menu-content { z-index: 4; position: relative; }
 
-        /* Small spacing so sections look separated from banner */
-        .dashboard-banner-menu-spacing { height: 16px; }
+        /* small gap so sections are visually separated from banner */
+        .dashboard-banner-menu-spacing { height: 12px; }
 
       `}</style>
 
