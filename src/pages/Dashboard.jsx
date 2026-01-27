@@ -154,13 +154,12 @@ function BannerSlider() {
   useEffect(() => {
     let animationFrameId;
     let start;
-    // keep same speed used previously so continuous effect looks identical
     const pxPerSec = 40;
     let trackWidth = 0;
 
     function setTrackWidth() {
       if (trackRef.current) {
-        // calculate half the total width (because slides are duplicated)
+        // The track contains duplicated slides; use half the scrollWidth so the loop aligns.
         trackWidth = Math.max(1, trackRef.current.scrollWidth / 2);
       }
     }
@@ -173,7 +172,7 @@ function BannerSlider() {
       const elapsed = (ts - start) / 1000;
       const px = (elapsed * pxPerSec) % trackWidth;
       if (trackRef.current) {
-        // only translateX, avoid translateY or scaling to keep layout stable
+        // Move the whole track left; slides are full-container width so each image fully enters the card as it animates.
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
       animationFrameId = requestAnimationFrame(animateBanner);
@@ -191,73 +190,86 @@ function BannerSlider() {
 
   return (
     <section className="dashboard-banner-section banner-slider-container" aria-label="Banner slider">
-      {/* Banner-specific inline CSS:
-          - larger responsive heights for banner images (bigger than section cards).
-          - object-fit: cover so banner images fill their card area and keep focus center.
-          - overflow:hidden on container to prevent horizontal/vertical overflow.
-          - ensure track transform does not create overlap hiding subsequent sections: the track has z-index:0 and sections are set to z-index:1 (below we set section stacking to keep them visible).
-      */}
       <style>{`
+        /* Banner is intentionally larger than standard section cards and fully responsive.
+           Key points implemented:
+           - Each slide occupies 100% of the banner container (no vw usage) so the animation stays aligned.
+           - The image uses object-fit: contain so the full image fits within the card (no cropped portions).
+           - The track is transformed (translateX) for smooth continuous looping.
+           - Sections below are forced to render above the track (z-index) so they are never hidden.
+        */
+
         .banner-slider-container {
           box-sizing: border-box;
           padding: 12px 12px 6px 12px;
           width: 100%;
-          overflow: hidden; /* keep banner contained in flow */
+          overflow: hidden;
+          z-index: 0;
         }
 
         .banner-slider-track-continuous {
           display: flex;
           align-items: center;
-          /* transformed element; keep stacking low so subsequent sections remain visible */
-          z-index: 0;
+          width: 100%;
           will-change: transform;
+          z-index: 0; /* keep track beneath section overlays so sections are always visible */
         }
 
+        /* Each slide fills the banner container (so a whole image enters the card as the track moves) */
         .banner-slider-slide-continuous {
           flex: 0 0 100%;
           width: 100%;
           box-sizing: border-box;
-          padding: 0 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
         }
 
+        /* Ensure the full image fits inside the card (no cropping). On very wide displays the image will
+           scale up while maintaining aspect ratio; on narrow screens it will scale down — but always fully visible.
+           The track movement slides the entire image in and out of view (whole-image sliding).
+        */
         .banner-slider-slide-continuous .banner-slider-img {
           width: 100%;
-          height: 320px; /* mobile baseline taller than standard section cards */
-          object-fit: cover;
+          height: 100%;
+          max-height: 460px; /* upper bound for large screens */
+          object-fit: contain; /* show the entire image inside the card */
           object-position: center;
           display: block;
-          border-radius: 6px;
+          background: #fff; /* preserves neutral backdrop when images have transparent areas */
+          user-select: none;
+          pointer-events: none;
         }
 
-        @media (min-width: 520px) {
-          .banner-slider-slide-continuous .banner-slider-img {
-            height: 360px;
-          }
-        }
+        /* Banner heights: larger than the section cards at all breakpoints */
+        .banner-slider-container { min-height: 320px; }
+        .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 320px; }
 
         @media (min-width: 900px) {
-          .banner-slider-slide-continuous .banner-slider-img {
-            height: 420px;
-          }
+          .banner-slider-container { min-height: 420px; }
+          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 420px; }
+          .banner-slider-slide-continuous .banner-slider-img { max-height: 460px; }
         }
 
-        @media (min-width: 1200px) {
-          .banner-slider-slide-continuous .banner-slider-img {
-            height: 460px;
-          }
+        @media (max-width: 900px) {
+          .banner-slider-container { min-height: 260px; }
+          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 260px; }
         }
 
-        /* Prevent the transformed track from hiding subsequent content:
-           make sure regular sections are positioned above the banner track */
-        .dashboard-menu-section {
-          position: relative;
-          z-index: 1;
+        @media (max-width: 700px) {
+          .banner-slider-container { min-height: 200px; }
+          .banner-slider-track-continuous, .banner-slider-slide-continuous { height: 200px; }
         }
 
-        /* Small spacer under banner so next sections don't butt up directly */
-        .dashboard-banner-menu-spacing {
-          height: 16px;
-        }
+        /* Ensure other section cards and their overlay content remain above the banner transform track */
+        .dashboard-menu-section { z-index: 2; position: relative; }
+        .dashboard-menu-overlay { z-index: 3; position: absolute; }
+        .dashboard-menu-content { z-index: 4; position: relative; }
+
+        /* Small spacing so sections look separated from banner */
+        .dashboard-banner-menu-spacing { height: 16px; }
+
       `}</style>
 
       <div className="banner-slider-track-continuous" ref={trackRef}>
@@ -283,7 +295,7 @@ export default function Dashboard() {
       <Sidebar open={sidebarOpen} onClose={handleSidebarClose} />
       <main className="dashboard-main-content">
         <BannerSlider />
-        <div className="dashboard-banner-menu-spacing" />
+        <div className="dashboard-banner-menu-spacing"></div>
         {dashboardSections.map((section, i) => (
           <section
             className={`dashboard-menu-section${section.title === "COMMODITIES" ? " commodities-section" : ""}`}
