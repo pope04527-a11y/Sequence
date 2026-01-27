@@ -4,17 +4,6 @@ import "./Shoes.css";
 // Adjust the path if your image is in a different folder under src.
 import ShoesHero from "../assets/images/dashboard/Electronics.png";
 
-/**
- * Electronics page (kept layout & CSS identical to Shoes.jsx)
- * - Uses the same Shoes.css styles and the same two-column, 8-per-page layout.
- * - Product URLs and text have been updated for electronics.
- * - Updated to shuffle product URLs at runtime (consistent with other category pages).
- * - Image area now flexes to take remaining vertical space after title/desc and uses object-fit: contain
- *   so product images always fit inside the card without cropping.
- * - Two-column layout is preserved; on extremely narrow viewports the grid scrolls horizontally
- *   instead of collapsing to a single column to keep the 2x4 layout.
- */
-
 /* Helper: build a friendly name from the Cloudinary filename */
 function friendlyNameFromUrl(url) {
   try {
@@ -163,58 +152,7 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096777/products/IIDA_for_samsung_A10_A20_A30_A40_A50_A70_A51_A21_A12S_A10e_A_IIDA_for_samsung_A10_A20_A30_A40_A50_A70_A51_A21_A12S_A10e_A_360.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096754/products/Household_Hot_Sales_Built-in_90cm_100L_Gas_Electrical_Oven_H_Household_Hot_Sales_Built-in_90cm_100L_Gas_Electrical_Oven_702_1.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096748/products/Hote_Sale_Global_version_Smartphone_High_quality_S22_mobile_Hote_Sale_Global_version_Smartphone_High_quality_S22_mobile_198.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096523/products/Horno_electrico_Home_major_kitchen_appliances_inbuilt_wall_c_Horno_electrico_Home_major_kitchen_appliances_inbuilt_wall_c_1105.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096495/products/Home_appliance_room_use_personal_space_air_cooler_and_heater_Home_appliance_room_use_personal_space_air_cooler_and_heater_89_32.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096505/products/Home_kitchen_appliance_range_hood_with_high_quality_material_Home_kitchen_appliance_range_hood_with_high_quality_material_103_5.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096490/products/Home_appliance_20Lday_dehumidifier_with_wifi_two_fan_speed_a_Home_appliance_20Lday_dehumidifier_with_wifi_two_fan_speed_a_111_1.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096507/products/Home_training_exercise_sport_machine_Home_training_exercise_Home_training_exercise_sport_machine_880.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096467/products/Home_Fitness_Exercise_Equipments_LED_Window_Runnin_Home_Fitn_Home_Fitness_Exercise_Equipments_LED_Window_Runnin_144_1.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096436/products/High_quality_used_slide_mobile_phone_for_D80_phone_mobile_wi_High_quality_used_slide_mobile_phone_for_D80_phone_mobile_wi_145_42.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096363/products/High_quality_S22_Ultra_true_4G_Android_11_true_perforation_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_High_quality_S22_Ultra_true_4G_Android_11_true_perforation.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096319/products/High_Rate_Recognition_Management_Software_Sri_Lanka_Car_Park_High_Rate_Recognition_Management_Software_Sri_Lanka_Car_Park_418.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096111/products/High_Quality_Famous_Brand_Lavin_Shoes_Customized_High_Qualit_High_Quality_Famous_Brand_Lavin_Shoes_Customized_High_Qualit_88.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096055/products/High-Precision_Scientific_Research_Machine_Vision_Industrial_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_High-Precision_Scientific_Research_Machine_Vision_Industrial.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750095775/products/HOT_Digital_Camera_with_3_Inch_Flip_Up_LCD_White_HOT_Digital_HOT_Digital_Camera_with_3_Inch_Flip_Up_LCD_White_650.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750095693/products/Grandtime_2022_Tech_AI_4G_Camera_Wireless_Security_Mini_Came_Grandtime_2022_Tech_AI_4G_Camera_Wireless_Security_Mini_Came_585.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750095683/products/Grandtime_2022_Tech_AI_4G_Camera_Wireless_Security_Mini_Came_Grandtime_2022_Tech_AI_4G_Camera_Wireless_Security_Mini_Came_504.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750095679/products/Grandtime_2021_Bestselling_Wireless_2G3G4G_Dual_mic_Video_Re_Grandtime_2021_Bestselling_Wireless_2G3G4G_Dual_mic_Video_Re_1034.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750089941/products/100_original_7_3_inch_Screen_Android_phone_16GB_512GB_camer_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_100_original_7_3_inch_Screen_Android_phone_16GB_512GB_camer.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750089960/products/100ML_NOSTALGIA_TIMELESS_ORIGINAL_PERFUME_BY_LORIS_BRAND_FOR_100ML_NOSTALGIA_TIMELESS_ORIGINAL_PERFUME_BY_LORIS_BRAND_FOR_3250.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750089986/products/10L_Induction_fast_heat_safety_and_energy_saving_Electric_wa_10L_Induction_fast_heat_safety_and_energy_saving_Electric_wa_587_64.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090024/products/1200W_output_outdoor_energy_lifepo4_battery_tragbare_kraftwe_1200W_output_outdoor_energy_lifepo4_battery_tragbare_kraftwe_581_9.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090138/products/122448v_output_120vac_220vac_off_grid_hybrid_inverter_1kw_2k_122448v_output_120vac_220vac_off_grid_hybrid_inverter_1kw_2k_273_9.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090163/products/13_3_inch_Touch_Screen_WIN_10_Laptop_360_Degree_Rotary_Celer_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_13_3_inch_Touch_Screen_WIN_10_Laptop_360_Degree_Rotary_Celer.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090166/products/15_6_Inch_Intel_I3_N4000_J4125_Wins10_Netbook_8gb_Rom_256gb_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_15_6_Inch_Intel_I3_N4000_J4125_Wins10_Netbook_8gb_Rom_256gb.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090172/products/15_inch_industrial_computing_workstation_Portable_Computer_T_15_inch_industrial_computing_workstation_Portable_Computer_T_1045.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090388/products/2021_New_Arrival_Hubsan_Zino_2_Plus_Drone_GPS_Zino_2_Quadco_2021_New_Arrival_Hubsan_Zino_2_Plus_Drone_GPS_Zino_2_Quadco_654_5.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090416/products/2021_Newest_Note30_12GB_512GB_Smartphone_6_9_Inch_AMOLED_Sc_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_2021_Newest_Note30_12GB_512GB_Smartphone_6_9_Inch_AMOLED_Sc.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090422/products/2021_P_M_New_Design_Mini_portable_medicine_refrigerator_for_2021_P_M_New_Design_Mini_portable_medicine_refrigerator_for_200_6.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090557/products/2022_Best_Selling_Hydrogen_Ionic_Detox_Foot_Spa_Apparatus_He_2022_Best_Selling_Hydrogen_Ionic_Detox_Foot_Spa_Apparatus_He_1100.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090563/products/2022_Bio_resonance_8d_nls_body_health_analyzer_for_health_de_2022_Bio_resonance_8d_nls_body_health_analyzer_for_health_de_484_25.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090661/products/2022_Hot_Sell_Factory_Multi-function_Auto_Folding_One_Hand_S_2022_Hot_Sell_Factory_Multi-function_Auto_Folding_One_Hand_S_88.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090710/products/2022_NEW_S135_MAX_Drone_GPS_8K_Professional_Dual_HD_Camera_3_2022_NEW_S135_MAX_Drone_GPS_8K_Professional_Dual_HD_Camera_3_135_3.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090808/products/2022_New_Xiaomi_RedmiBook_Laptop_Pro_14_Inch_AMD_R5_6600HR7_2022_New_Xiaomi_RedmiBook_Laptop_Pro_14_Inch_AMD_R5_6600HR7_625_57.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090817/products/2022_New_Xiaomi_RedmiBook_Pro_15_2022_Laptop_12th_Intel_i7_1_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_2022_New_Xiaomi_RedmiBook_Pro_15_2022_Laptop_12th_Intel_i7_1.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750090880/products/2022_Smartphone_S22_Ultra_Full_Screen_16_512GB_Android_Mobil_2022_Smartphone_S22_Ultra_Full_Screen_16_512GB_Android_Mobil_209.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091261/products/20_Minutes_Long_Flight_Duration_Battery_Life_1_2KM_Radius_8K_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_20_Minutes_Long_Flight_Duration_Battery_Life_1_2KM_Radius_8K.png",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091395/products/3kva_ups_1_phase_uninterruptible_power_supply_for_computerEl_3kva_ups_1_phase_uninterruptible_power_supply_for_computerEl_858.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091395/products/3kva_ups_1_phase_uninterruptible_power_supply_for_computerEl_3kva_ups_1_phase_uninterruptible_power_supply_for_computerEl_858.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091427/products/46L_china_home_appliances_micro_cool_mini_refrigerator_with_46L_china_home_appliances_micro_cool_mini_refrigerator_with_103_5.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091432/products/492L_Reliable_And_Cheap_Low_Noise_Home_Appliance_Four_Door_N_492L_Reliable_And_Cheap_Low_Noise_Home_Appliance_Four_Door_N_507.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091451/products/4Channel_19_LCD_Wifi_Surveillance_Cameras_Security_Monitor_4Channel_19_LCD_Wifi_Surveillance_Cameras_Security_Monitor_154.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091459/products/4G_Sim_Card_Solar_Camera_Dual_Lens_PTZ_10X_Zoom_CCTV_Outdoor_4G_Sim_Card_Solar_Camera_Dual_Lens_PTZ_10X_Zoom_CCTV_Outdoor_174_9.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091479/products/4K_Camcorder_Video_Camera_for_YouTube_HD_1080P_18X_Zoom_wit_4K_Camcorder_Video_Camera_for_YouTube_HD_1080P_18X_Zoom_wit_162.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091511/products/4k_HD_mechanical_3-Axis_gimbal_camera_5G_wifi_gps_system_sup_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_4k_HD_mechanical_3-Axis_gimbal_camera_5G_wifi_gps_system_sup.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091523/products/4k_hd_poe_cctv_camera_8mp_audio_security_camera_system_cctv_4k_hd_poe_cctv_camera_8mp_audio_security_camera_system_cctv_356_4.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091538/products/500wh_Ac_Power_Station_Portable_Generator_Solar_power_system_500wh_Ac_Power_Station_Portable_Generator_Solar_power_system_343_98.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091542/products/512G_Best_Sale_Unlocked_Laptop_For_HP_Probook_430G1_Second_H_512G_Best_Sale_Unlocked_Laptop_For_HP_Probook_430G1_Second_H_694_66.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091555/products/6_26_3G_4G_Quad_Core_Smartphone_Android_11_Cell_phones_Dua_We_are_a_leading_marketing_agency_that_utilIZES_over_10_year_6_26_3G_4G_Quad_Core_Smartphone_Android_11_Cell_phones_Dua.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091704/products/73L_200v_Built_in_Black_Double_Wall_Oven_Electric_Convection_73L_200v_Built_in_Black_Double_Wall_Oven_Electric_Convection_330.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091784/products/7kg_CondenserAir_Heat_Pump_Home_Appliances_Automatic_Heat_Pu_7kg_CondenserAir_Heat_Pump_Home_Appliances_Automatic_Heat_Pu_165.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091818/products/8KW_OFS-AQS-S-S-8-4_home_appliances_Heat_supply_single_funct_8KW_OFS-AQS-S-S-8-4_home_appliances_Heat_supply_single_funct_453_13.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091827/products/8kw_single_Phase_Factory_Price_wall_hang_boiler_electric_boi_8kw_single_Phase_Factory_Price_wall_hang_boiler_electric_boi_335_5.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091902/products/99_New_Used_Laptops_Chromebook_C740_High_Quality_11_Inches_99_New_Used_Laptops_Chromebook_C740_High_Quality_11_Inches_143.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750091993/products/AMV_58_2_Piece_Inch_Remote_control_Smart_Tv_4k_UHD_Televisio_AMV_58_2_Piece_Inch_Remote_control_Smart_Tv_4k_UHD_Televisio_330.jpg"
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750096523/products/Horno_electrico_Home_major_kitchen_appliances_inbuilt_wall_c_Horno_electrico_Home_major_kitchen_appliances_inbuilt_wall_c_1105.png"
 ];
 
 /* Shuffle the URLs at runtime so pages don't show grouped identical products */
@@ -362,7 +300,11 @@ export default function Electronics() {
           gap: 18px;
         }
 
-        /* Frame around each card to match screenshot look */
+        /*
+          FIXED CARD HEIGHT:
+          - Guarantee each card uses the same fixed height so long images or long titles
+            do not stretch their row or adjacent cards.
+        */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -371,14 +313,19 @@ export default function Electronics() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          min-height: 280px;
-          height: 100%;
+          height: 360px;
+          min-height: 360px;
+          max-height: 360px;
         }
 
-        /* Image wrapper now flexes to take remaining vertical space after the info (name/desc).
-           The info block is non-flexing so it occupies only the height it needs.
-           This ensures images always fit within the leftover space of the card.
-        */
+        /* Info area fixed so text cannot push the image area taller */
+        .shoe-info {
+          padding: 14px;
+          background: #fff;
+          flex: 0 0 92px; /* fixed info height */
+          box-sizing: border-box;
+        }
+
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -387,23 +334,17 @@ export default function Electronics() {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1 1 auto; /* image area expands to fill remaining vertical space */
-          padding: 0; /* remove fixed aspect padding to allow flexible height */
+          flex: 1 1 auto;
+          min-height: 0; /* ensures flexbox can shrink properly */
+          padding: 6px;
         }
-        /* Ensure image always fits inside its frame regardless of original size */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
           width: auto;
           height: auto;
-          object-fit: contain; /* do not crop; fit inside available space */
+          object-fit: contain;
           display: block;
-        }
-
-        .shoe-info {
-          padding: 14px;
-          background: #fff;
-          flex: 0 0 auto; /* info won't flex; it takes only the space it needs */
         }
 
         .shoe-name {
@@ -429,31 +370,49 @@ export default function Electronics() {
           overflow: hidden;
         }
 
-        /* Pagination style */
+        /* Pagination: constrain to same max width as grid so it never overflows the page */
         .pagination-wrap {
-          display:flex;
-          justify-content:center;
-          padding: 22px 0 44px;
+          display: flex;
+          justify-content: center;
+          padding: 22px 12px 44px;
+          box-sizing: border-box;
         }
-        .pagination-wrap button {
-          margin: 0 6px;
+
+        /* Keep the inner pagination content constrained and horizontally scrollable on very small viewports */
+        .pagination-inner {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          max-width: 1200px; /* same as grid */
+          width: 100%;
+          margin: 0 auto;
+          overflow-x: auto; /* allow scrolling when many page buttons exist */
+          -webkit-overflow-scrolling: touch;
+          padding: 6px;
+          box-sizing: border-box;
+        }
+
+        .pagination-inner::-webkit-scrollbar { height: 8px; } /* small scrollbar if visible */
+        .pagination-inner button {
+          flex: 0 0 auto;
+          margin: 0;
           padding: 8px 12px;
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid #d6d6d6;
           background: #fff;
           cursor: pointer;
           font-weight: 700;
           color: #111;
         }
-        .pagination-wrap button.active {
+        .pagination-inner button.active {
           background: #1e90ff;
           color: #fff;
           border-color: #1e90ff;
         }
 
-        /* Extra small screens: reduce frame thickness and font sizes */
         @media (max-width: 520px) {
-          .shoe-card-frame { border-width: 4px; min-height: 220px; }
+          .shoe-card-frame { border-width: 4px; height: 320px; min-height: 320px; max-height: 320px; }
+          .shoe-info { flex: 0 0 88px; }
           .shoe-name { font-size: 15px; }
           .shoe-desc { font-size: 12px; }
         }
@@ -488,7 +447,6 @@ export default function Electronics() {
         {/* Navy background strip with two vertical columns */}
         <div className="shoes-grid-outer" aria-hidden="false">
           <div className="two-column-vertical">
-            {/* Left column: top-to-bottom (4 items) */}
             <div className="column-stack" role="list">
               {leftColumn.map((p) => (
                 <a
@@ -509,7 +467,6 @@ export default function Electronics() {
               ))}
             </div>
 
-            {/* Right column: top-to-bottom (4 items) */}
             <div className="column-stack" role="list">
               {rightColumn.map((p) => (
                 <a
@@ -532,40 +489,42 @@ export default function Electronics() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination: arrows + page numbers inside a constrained, scrollable inner container */}
         <div className="pagination-wrap" aria-label="Pagination">
-          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
-            {"<"}
-          </button>
-
-          {pageNumbers[0] > 1 && (
-            <>
-              <button onClick={() => goTo(1)}>1</button>
-              {pageNumbers[0] > 2 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-            </>
-          )}
-
-          {pageNumbers.map((n) => (
-            <button
-              key={n}
-              onClick={() => goTo(n)}
-              className={n === currentPage ? "active" : ""}
-              aria-current={n === currentPage ? "page" : undefined}
-            >
-              {n}
+          <div className="pagination-inner" role="navigation" aria-label="Page navigation">
+            <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page">
+              {"<"}
             </button>
-          ))}
 
-          {pageNumbers[pageNumbers.length - 1] < totalPages && (
-            <>
-              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span style={{ alignSelf: "center", margin: "0 6px", color: "#fff" }}>…</span>}
-              <button onClick={() => goTo(totalPages)}>{totalPages}</button>
-            </>
-          )}
+            {pageNumbers[0] > 1 && (
+              <>
+                <button onClick={() => goTo(1)}>1</button>
+                {pageNumbers[0] > 2 && <button aria-hidden="true">…</button>}
+              </>
+            )}
 
-          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
-            {">"}
-          </button>
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                onClick={() => goTo(n)}
+                className={n === currentPage ? "active" : ""}
+                aria-current={n === currentPage ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <button aria-hidden="true">…</button>}
+                <button onClick={() => goTo(totalPages)}>{totalPages}</button>
+              </>
+            )}
+
+            <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page">
+              {">"}
+            </button>
+          </div>
         </div>
       </main>
     </div>
