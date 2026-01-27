@@ -159,8 +159,7 @@ function BannerSlider() {
 
     function setTrackWidth() {
       if (trackRef.current) {
-        // compute half width for continuous sliding (we duplicate slides)
-        trackWidth = trackRef.current.scrollWidth / 2 || 0;
+        trackWidth = trackRef.current.scrollWidth / 2;
       }
     }
 
@@ -170,7 +169,7 @@ function BannerSlider() {
     function animateBanner(ts) {
       if (!start) start = ts;
       const elapsed = (ts - start) / 1000;
-      const px = trackWidth ? (elapsed * pxPerSec) % trackWidth : 0;
+      const px = (elapsed * pxPerSec) % trackWidth;
       if (trackRef.current) {
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
@@ -187,191 +186,77 @@ function BannerSlider() {
 
   const allSlides = [...bannerSlides, ...bannerSlides];
 
-  // Make banner card visually larger than other sections while remaining responsive.
-  // Use clamp so it scales on mobile/desktop: at least 280px, prefers 36vh, max 520px.
-  const bannerContainerStyle = {
-    minHeight: "clamp(280px, 36vh, 520px)",
-    height: "auto",
-    overflow: "hidden",
-    position: "relative",
-    margin: "0 auto",
-    maxWidth: "100%",
-    boxSizing: "border-box",
-    padding: "18px 0", // add spacing same as other sections but larger visual area
-  };
-
-  const trackStyle = {
-    display: "flex",
-    alignItems: "stretch",
-    height: "100%",
-    willChange: "transform",
-  };
-
-  const slideStyle = {
-    flex: "0 0 100%",
-    height: "100%",
-    boxSizing: "border-box",
-    position: "relative",
-  };
-
-  const imgStyle = {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover", // fill the increased banner area responsively
-    display: "block",
-  };
-
   return (
-    <section className="dashboard-banner-section banner-slider-container" style={bannerContainerStyle}>
-      <div className="banner-slider-track-continuous" ref={trackRef} style={trackStyle}>
+    <section className="dashboard-banner-section banner-slider-container">
+      {/* Inline styles specific to banner sizing/responsiveness.
+          We increase the banner image height (so banner card is bigger than the regular sections)
+          while ensuring images use object-fit: cover and remain centered on all devices.
+          Other section styles are untouched.
+      */}
+      <style>{`
+        /* Banner-specific sizing: make banner slides taller than normal section cards */
+        .banner-slider-track-continuous {
+          display: flex;
+          align-items: center;
+        }
+
+        .banner-slider-slide-continuous {
+          flex: 0 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 0;
+        }
+
+        /* Banner image: increase height and use cover so image fills the banner card responsively */
+        .banner-slider-slide-continuous .banner-slider-img {
+          width: 100%;
+          height: 360px; /* default banner height for tablets/desktop */
+          object-fit: cover;
+          object-position: center;
+          display: block;
+          border-radius: 4px;
+        }
+
+        /* Larger on large desktop screens */
+        @media (min-width: 1200px) {
+          .banner-slider-slide-continuous .banner-slider-img {
+            height: 420px;
+          }
+        }
+
+        /* Slightly taller mid-size screens for better prominence */
+        @media (min-width: 900px) and (max-width: 1199px) {
+          .banner-slider-slide-continuous .banner-slider-img {
+            height: 380px;
+          }
+        }
+
+        /* Reduce height on small screens but keep prominence (still larger than section cards) */
+        @media (max-width: 520px) {
+          .banner-slider-slide-continuous .banner-slider-img {
+            height: 260px;
+          }
+        }
+
+        /* Ensure the banner container doesn't clip the image or hide other page content on small devices */
+        .banner-slider-container {
+          padding: 10px 12px;
+          box-sizing: border-box;
+        }
+
+        /* Keep the continuous track transform smooth */
+        .banner-slider-track-continuous {
+          will-change: transform;
+          transition: transform 0.1s linear;
+        }
+      `}</style>
+
+      <div className="banner-slider-track-continuous" ref={trackRef}>
         {allSlides.map((slide, i) => (
-          <div className="banner-slider-slide-continuous" key={i} style={slideStyle}>
-            <img src={slide.img} alt={`Banner ${i + 1}`} className="banner-slider-img" draggable={false} style={imgStyle} />
+          <div className="banner-slider-slide-continuous" key={i}>
+            <img src={slide.img} alt={`Banner ${i + 1}`} className="banner-slider-img" draggable={false} />
           </div>
         ))}
-      </div>
-    </section>
-  );
-}
-
-/*
-  RotatingSection
-  - Renders a section whose background is an absolutely positioned <img> that cycles through a provided images array.
-  - Uses objectFit 'cover' so the image fills the section and remains responsive across devices.
-  - The first section is intentionally taller than the others; content is centered and padded so nothing is cut on small screens.
-*/
-function RotatingSection({ images, title, desc, btn, url, height = 420, minHeightMobile = 260, interval = 3000 }) {
-  const [index, setIndex] = useState(0);
-  const mounted = useRef(true);
-
-  useEffect(() => {
-    mounted.current = true;
-    const id = setInterval(() => {
-      if (!mounted.current) return;
-      setIndex((s) => (s + 1) % images.length);
-    }, interval);
-
-    return () => {
-      mounted.current = false;
-      clearInterval(id);
-    };
-  }, [images.length, interval]);
-
-  // Inline styles to ensure content doesn't get cut on small devices.
-  const sectionStyle = {
-    position: "relative",
-    overflow: "visible",
-    // allow the first card to be larger on all devices
-    minHeight: `${minHeightMobile}px`,
-    height: "auto",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "28px 0",
-    boxSizing: "border-box",
-  };
-
-  const imageWrapperStyle = {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    overflow: "hidden",
-    zIndex: 0,
-    border: "8px solid rgba(7,30,47,1)",
-    boxSizing: "border-box",
-    borderRadius: 4,
-  };
-
-  const imgStyle = {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover", // cover so it fills without squishing; center crop keeps visual consistent
-    display: "block",
-    transition: "opacity 600ms ease",
-    opacity: 1,
-  };
-
-  const overlayStyle = {
-    position: "relative",
-    zIndex: 2,
-    width: "100%",
-    maxWidth: 1100,
-    padding: "32px 18px",
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const contentStyle = {
-    textAlign: "center",
-    color: "#fff",
-    // ensure content stays visible and spaced from edges on very small screens
-    padding: "10px 8px",
-  };
-
-  const titleStyle = {
-    fontSize: "36px",
-    fontWeight: 800,
-    marginBottom: 8,
-    textShadow: "0 4px 14px rgba(0,0,0,0.45)",
-  };
-
-  const descStyle = {
-    fontSize: "16px",
-    opacity: 0.95,
-    marginBottom: 16,
-    textShadow: "0 3px 10px rgba(0,0,0,0.35)",
-  };
-
-  const btnStyle = {
-    display: "inline-block",
-    background: "#158a93",
-    color: "#fff",
-    padding: "14px 26px",
-    borderRadius: 8,
-    textDecoration: "none",
-    fontWeight: 800,
-    boxShadow: "0 8px 20px rgba(21,138,147,0.18)",
-  };
-
-  return (
-    <section
-      className="dashboard-menu-section rotating-section"
-      aria-label={title}
-      style={{ ...sectionStyle }}
-    >
-      {/* Image wrapper: show current image as full-bleed background */}
-      <div style={imageWrapperStyle} aria-hidden>
-        {images.map((src, i) => (
-          <img
-            key={i}
-            src={src}
-            alt={`${title} ${i + 1}`}
-            style={{
-              ...imgStyle,
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              opacity: i === index ? 1 : 0,
-            }}
-            draggable={false}
-          />
-        ))}
-      </div>
-
-      {/* overlay with content centered */}
-      <div style={overlayStyle}>
-        <div style={contentStyle}>
-          <div style={titleStyle}>{title}</div>
-          <div style={descStyle}>{desc}</div>
-          <Link to={url} className="dashboard-menu-btn" style={btnStyle}>
-            {btn} <span className="dashboard-menu-btn-arrow">→</span>
-          </Link>
-        </div>
       </div>
     </section>
   );
@@ -383,11 +268,6 @@ export default function Dashboard() {
   const handleMenuClick = () => setSidebarOpen(true);
   const handleSidebarClose = () => setSidebarOpen(false);
 
-  // Choose a set of images for the first card to rotate.
-  // Using the section image (shoes) plus two banner images provides visual variety
-  // while keeping the first card clearly associated with the Shoes section.
-  const firstSectionImages = [shoesImg, bannerImg1, bannerImg2];
-
   return (
     <div className="login-bg-hero">
       <Header onMenuClick={handleMenuClick} />
@@ -395,37 +275,16 @@ export default function Dashboard() {
       <main className="dashboard-main-content">
         <BannerSlider />
         <div className="dashboard-banner-menu-spacing"></div>
-
-        {/* First section as a rotating, taller, fully-responsive card */}
-        <RotatingSection
-          images={firstSectionImages}
-          title={dashboardSections[0].title}
-          desc={dashboardSections[0].desc}
-          btn={dashboardSections[0].btn}
-          url={dashboardSections[0].url}
-          height={420}
-          minHeightMobile={300}
-          interval={3500}
-        />
-
-        {/* Render the rest of the sections as before but ensure content overlay is centered and images fit */}
-        {dashboardSections.slice(1).map((section, i) => (
+        {dashboardSections.map((section, i) => (
           <section
             className={`dashboard-menu-section${section.title === "COMMODITIES" ? " commodities-section" : ""}`}
             key={section.title || i}
-            // keep background-image for compatibility but also ensure overlay content won't be cut on small devices
-            style={{
-              backgroundImage: `url(${section.img})`,
-              // ensure each non-first section has a consistent height and spacing
-              minHeight: "220px",
-              padding: "28px 0",
-              boxSizing: "border-box",
-            }}
+            style={{ backgroundImage: `url(${section.img})` }}
           >
             <div className="dashboard-menu-overlay">
-              <div className="dashboard-menu-content dashboard-menu-content-center" style={{ padding: "18px 12px" }}>
-                <div className="dashboard-menu-title" style={{ marginBottom: 8 }}>{section.title}</div>
-                <div className="dashboard-menu-desc" style={{ marginBottom: 16 }}>{section.desc}</div>
+              <div className="dashboard-menu-content dashboard-menu-content-center">
+                <div className="dashboard-menu-title">{section.title}</div>
+                <div className="dashboard-menu-desc">{section.desc}</div>
                 <Link to={section.url} className="dashboard-menu-btn">
                   {section.btn} <span className="dashboard-menu-btn-arrow">→</span>
                 </Link>
@@ -433,7 +292,6 @@ export default function Dashboard() {
             </div>
           </section>
         ))}
-
         <BrandLogoRow />
         <QuickMenu />
       </main>
