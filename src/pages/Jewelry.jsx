@@ -12,7 +12,8 @@ import JewelryHero from "../assets/images/dashboard/Jewery.png";
  *   * Image area flexes to take the remaining vertical space after the name/description.
  *   * Images use object-fit: contain so they always fit inside the available area (no cropping).
  *   * Product URLs are shuffled at runtime (consistent with Apparel, Accessories, Watches, Shoes).
- * - Nothing else in markup or logic removed; adjustments limited to layout, image-fit and shuffle behaviour.
+ * - Additional change: card height is fixed so a single tall product does NOT stretch other cards.
+ *   The image area will scale/contain within the fixed box and the text area is constrained.
  */
 
 /* Helper: build a friendly name from the Cloudinary filename */
@@ -75,7 +76,7 @@ const productUrls = [
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300500/products/Large_Wedding_Band_with_Baguette_Round_Diamonds_in_18_kt_W_Present_her_with_a_diamond_surprise_on_that_special_day_with_Large_Wedding_Band_with_Baguette_Round_Diamonds_in_18_kt_W.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300498/products/Lanmi_Men_s_14K18K_Yellow_White_Gold_Natural_Emerald_Ring_Sa_Lanmi_Men_s_14K18K_Yellow_White_Gold_Natural_Emerald_Ring_Sa_5116.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300497/products/Ladybug_Flower_Clip_On_Earrings_Brilliantly_bejeweled_and_tr_Ladybug_Flower_Clip_On_Earrings_266.jpg",
-  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300496/products/La4ve_Diamonds_12-3_00_Carat_ctw_14K_White_Gold_4_Prong_Set_Rou_Stunning_14k_White_Gold_Eye-catching_round_cut_lab-grown_dia_La4ve_Diamonds_12-3_00_Carat_ctw_14K_White_Gold_4_Prong_Set_Rou.jpg",
+  "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300496/products/La4ve_Diamonds_12-3_00_Carat_ctw_14K_White_Gold_4_Prong_Set_Rou_Stunning_14k_White_Gold_Eye-catching_round_cut_lab-grown_dia_La4ve_Diamonds_12-3_00_Carat_ctw_14K_Princess_White.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300492/products/King_Will_Classic_Tungsten_Carbide_Ring_SilverBlackRedGreen_King_Will_Classic_Tungsten_Carbide_Ring_SilverBlackRedGreen_24.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300493/products/Kobelli_2_38_ct_tw_The_Pear_Hidden_Halo_Diamond_Ring_GIA_Ce_GIA_Certified_Pear_Diamond_Hidden_Halo_Design_Smooth_High-Po_Kobelli_2_38_ct_tw_The_Pear_Hidden_Halo_Diamond_Ring_GIA_Ce.jpg",
   "https://res.cloudinary.com/dhubpqnss/image/upload/v1750300495/products/LUXURMAN_Men_s_18K_Gold_Unique_4_Carat_Round_and_Oval_Diamon_LUXURMAN_Men_s_18K_Gold_Unique_4_Carat_Round_and_Oval_Diamon_44500.jpg",
@@ -241,10 +242,7 @@ export default function Jewelry() {
         }
 
         /* Two-column grid that makes each row's cards equal height.
-           Using CSS Grid with grid-auto-rows: 1fr ensures items in the same row
-           match height (so cards align and the layout looks consistent regardless
-           of image proportions). We keep two columns on all screen sizes but reduce
-           the minimum column width on smaller screens so the grid remains stable.
+           Use a fixed card height so a single tall product doesn't stretch the row.
         */
         .two-column-vertical {
           display: grid;
@@ -252,7 +250,6 @@ export default function Jewelry() {
           gap: 18px;
           max-width: 1200px;
           margin: 0 auto;
-          grid-auto-rows: 1fr; /* equalize height across each grid row */
         }
 
         @media (max-width: 520px) {
@@ -265,6 +262,12 @@ export default function Jewelry() {
 
         .column-stack { display: contents; }
 
+        /*
+         FIXED CARD HEIGHT:
+         - Set a fixed card height (matches Shoes layout sizing).
+         - The image area will be constrained inside the fixed box and keep object-fit: contain.
+         - The info block height is fixed so text won't push the image area larger.
+        */
         .shoe-card-frame {
           border: 8px solid #071e2f;
           box-sizing: border-box;
@@ -273,10 +276,24 @@ export default function Jewelry() {
           flex-direction: column;
           overflow: hidden;
           text-decoration: none;
-          height: 100%; /* important: stretch to fill the grid row height */
-          min-height: 260px;
+
+          /* fixed height so all cards are identical regardless of content */
+          height: 360px;
+          min-height: 360px;
+          max-height: 360px;
         }
 
+        /* Info area has a fixed height so it cannot push the card taller */
+        .shoe-info {
+          padding: 14px;
+          background: #fff;
+          flex: 0 0 92px; /* fixed info height (approx same as Shoes layout) */
+          box-sizing: border-box;
+        }
+
+        /* Image wrapper occupies the remaining fixed space and centers the image.
+           Use min-height:0 so flexbox shrinks correctly on some browsers.
+        */
         .shoe-image-wrap {
           width: 100%;
           position: relative;
@@ -285,9 +302,12 @@ export default function Jewelry() {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 1 1 auto; /* image area expands to fill remaining vertical space */
-          padding: 0;
+          flex: 1 1 auto;
+          min-height: 0;
+          padding: 6px;
         }
+
+        /* Ensure image always fits inside its area and cannot overflow the fixed card height. */
         .shoe-image-wrap img {
           max-width: 100%;
           max-height: 100%;
@@ -295,12 +315,6 @@ export default function Jewelry() {
           height: auto;
           object-fit: contain;
           display: block;
-        }
-
-        .shoe-info {
-          padding: 14px;
-          background: #fff;
-          flex: 0 0 auto;
         }
 
         .shoe-name {
@@ -349,7 +363,8 @@ export default function Jewelry() {
         }
 
         @media (max-width: 520px) {
-          .shoe-card-frame { border-width: 4px; min-height: 220px; }
+          .shoe-card-frame { border-width: 4px; height: 320px; min-height: 320px; max-height: 320px; }
+          .shoe-info { flex: 0 0 88px; }
           .shoe-name { font-size: 15px; }
           .shoe-desc { font-size: 12px; }
         }
