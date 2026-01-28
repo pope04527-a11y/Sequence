@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 import { useBalance } from "../context/balanceContext";
 import "./Records.css";
@@ -11,17 +11,14 @@ import recordsIcon from "../assets/images/tabBar/records.png";
 /*
   Records.jsx
 
-  Changes implemented in this file:
-  - Ensure pending tasks are fetched immediately on mount by awaiting refreshRecords()
-    and hiding the spinner only after the first successful fetch.
-  - Refresh records when the page/tab gains focus so pending items show immediately when navigating.
-  - For combo groups with multiple pending items: mark one item as "Frozen" (display-only,
-    shown with a light red badge) and keep the other(s) as normal Pending items. The frozen
-    item is chosen as the last pending in the group so the submit-able item(s) appear on top.
-  - The submit-able combo item displays a grey "Pending" badge (as requested) and is shown above
-    the frozen item. The frozen item displays "Frozen" in light red.
-  - When combo pending items exist they are prioritized to the top of the list and have submitting enabled.
-  - Kept the rest of the file logic, layout and behavior intact.
+  Notes on changes:
+  - Performs an aggressive initial refresh on mount (with retries) and when route becomes active,
+    so pending/combo tasks appear immediately without a manual page refresh.
+  - For combo groups with pending items:
+      * the last pending item in the group is marked "Frozen" (light red badge)
+      * other pending items for that combo group are shown above and get a grey "Pending" badge
+      * submit button is shown only for non-frozen pending combo items (and other original conditions)
+  - Kept original layout and behavior as requested.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -120,6 +117,7 @@ function toTitleCase(str) {
 const Records = () => {
   const [activeTab, setActiveTab] = useState("All");
   const navigate = useNavigate();
+  const location = useLocation();
   const { records, submitTaskRecord, refreshRecords } = useTaskRecords();
   const { balance, commissionToday, refreshProfile } = useBalance();
   const [submitting, setSubmitting] = useState({});
@@ -128,25 +126,62 @@ const Records = () => {
 
   const [showSpinner, setShowSpinner] = useState(true);
 
-  // Ensure we fetch records immediately and wait for the first fetch to complete
+  // Keep a ref of the latest records so async loops can inspect them
+  const recordsRef = useRef(records);
   useEffect(() => {
-    let mounted = true;
-    const doInitialFetch = async () => {
+    recordsRef.current = records;
+  }, [records]);
+
+  // Utility: sleep
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  // Aggressive initial fetch with retries to ensure pending tasks show up immediately.
+  // This runs on mount and when the route becomes active.
+  useEffect(() => {
+    let cancelled = false;
+    const MAX_ATTEMPTS = 6;
+    const attemptFetchUntilPending = async () => {
       setShowSpinner(true);
       try {
-        if (refreshRecords) {
-          // await so UI waits for the first data to arrive
-          await refreshRecords();
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          try {
+            if (refreshRecords) {
+              // call refresh
+              await refreshRecords();
+            }
+          } catch (e) {
+            // ignore per-attempt error; we'll retry
+            // console.error("refreshRecords error", e);
+          }
+
+          // wait a bit to allow context to update
+          await sleep(700);
+
+          // If we've got pending records in the refreshed data, stop retrying
+          const list = recordsRef.current || [];
+          const hasPending = list.some((r) => r && r.status === "Pending");
+          // Debug log to help trace behavior locally
+          // console.log(`[Records] attempt ${attempt} - total ${list.length} - hasPending=${hasPending}`);
+          if (hasPending) break;
+          if (cancelled) break;
         }
-      } catch (e) {
-        // ignore network errors here; spinner will hide
       } finally {
-        if (mounted) setShowSpinner(false);
+        if (!cancelled) setShowSpinner(false);
       }
     };
-    doInitialFetch();
 
-    // Refresh again when window/tab regains focus so pending items appear immediately when navigating back
+    // run on mount
+    attemptFetchUntilPending();
+
+    // also re-run when the user navigates back to this route (visibility/focus events handled below)
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount only
+
+  // When the window/tab gets focus or the route becomes active, re-run a short immediate refresh.
+  useEffect(() => {
     const handleFocus = () => {
       if (refreshRecords) refreshRecords();
     };
@@ -155,23 +190,47 @@ const Records = () => {
       if (!document.hidden && refreshRecords) refreshRecords();
     });
 
+    // Also when the location changes to this page, trigger immediate refresh attempts
+    let mounted = true;
+    const checkOnRouteEnter = async () => {
+      if (location.pathname === "/records" && mounted) {
+        setShowSpinner(true);
+        try {
+          // do a shorter retry loop
+          for (let i = 0; i < 4; i++) {
+            try {
+              if (refreshRecords) await refreshRecords();
+            } catch (e) {
+              // ignore
+            }
+            await sleep(600);
+            const hasPending = (recordsRef.current || []).some((r) => r && r.status === "Pending");
+            if (hasPending) break;
+          }
+        } finally {
+          if (mounted) setShowSpinner(false);
+        }
+      }
+    };
+    checkOnRouteEnter();
+
     return () => {
       mounted = false;
       window.removeEventListener("focus", handleFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+  }, [location.pathname]);
 
-  // Continue polling for updates (but only after initial spinner is hidden)
+  // Continue polling periodically (only after initial spinner hidden)
   useEffect(() => {
     if (showSpinner) return;
     const interval = setInterval(() => {
       refreshRecords && refreshRecords();
-    }, 3000); // reasonable polling interval
+    }, 4000);
     return () => clearInterval(interval);
   }, [showSpinner, refreshRecords]);
 
-  // Build combo groups (pending) and prepare frozen mapping
+  // Helper: group pending combo items
   function getPendingComboGroups(recordsList) {
     const groups = {};
     for (const rec of recordsList) {
@@ -180,14 +239,12 @@ const Records = () => {
         groups[rec.comboGroupId].push(rec);
       }
     }
-    // Sort each group's records by creation time ascending (oldest first)
     Object.values(groups).forEach(arr =>
       arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     );
     return groups;
   }
 
-  // Choose last pending's taskCode in a group (used by some logic)
   function getLastPendingComboTaskCode(comboRecords) {
     if (!comboRecords || comboRecords.length === 0) return null;
     return comboRecords[comboRecords.length - 1].taskCode;
@@ -244,51 +301,41 @@ const Records = () => {
       (record.status && record.status.toLowerCase() === activeTab.toLowerCase())
   );
 
-  // Build pending combo groups & frozen mapping:
+  // Build pending combo groups & frozen mapping.
   const pendingComboGroups = getPendingComboGroups(filteredRecords);
 
-  // frozenMap: mark one item per combo group as "Frozen" for display (red badge)
-  // Rule: if a group has 2+ pending items, freeze the LAST pending item (so submit-able item(s) appear on top)
+  // frozenMap: mark one item per combo group as "Frozen" for display (light red badge).
+  // Per your request: the submit-able product should be on top, so freeze the LAST pending item in group.
   const frozenMap = {};
   Object.values(pendingComboGroups).forEach((group) => {
     if (group.length >= 2) {
-      const frozenRec = group[group.length - 1]; // freeze last pending in group
+      const frozenRec = group[group.length - 1]; // freeze the last pending item
       if (frozenRec && frozenRec.taskCode) {
         frozenMap[frozenRec.taskCode] = true;
       }
     }
   });
 
-  // lastPendingComboTaskCodes is still useful for some conditions (kept)
   const lastPendingComboTaskCodes = Object.values(pendingComboGroups).map(getLastPendingComboTaskCode);
 
-  // Sort records but give priority to pending combo groups:
-  // - For each combo group with pending items, include the group's non-frozen pending items first (so they appear on top),
-  //   then include the frozen one (if any), preserving chronological order within.
-  // - Then append all other records (non-pending-combo) in the default sorted order.
+  // Build sortedRecords: priority pending-combo items first (non-frozen items above frozen),
+  // then other records in date-desc order.
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
 
-  // Copy filteredRecords to avoid mutating source
   const remaining = [...filteredRecords];
 
-  // Build priority list
   const priorityList = [];
   Object.values(pendingComboGroups).forEach((group) => {
-    // group is sorted ascending by createdAt (oldest first)
-    // We want pending non-frozen items first (these will be submittable),
-    // then the frozen item last for that group.
+    // group sorted ascending (oldest first)
     const nonFrozen = group.filter((r) => !frozenMap[r.taskCode]);
     const frozen = group.filter((r) => frozenMap[r.taskCode]);
 
-    // push non-frozen (preserve original order)
     nonFrozen.forEach((r) => {
       priorityList.push(r);
-      // remove from remaining
       const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
       if (idx !== -1) remaining.splice(idx, 1);
     });
 
-    // push frozen afterwards
     frozen.forEach((r) => {
       priorityList.push(r);
       const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
@@ -296,10 +343,8 @@ const Records = () => {
     });
   });
 
-  // For all other records, sort by date desc (existing behaviour)
   remaining.sort(byDateDesc);
 
-  // Final sortedRecords: priority first, then the rest
   const sortedRecords = [...priorityList, ...remaining];
 
   const getRecordImage = (product) => {
@@ -314,26 +359,21 @@ const Records = () => {
     return "/assets/images/products/default.png";
   };
 
-  // Render single record row styled like screenshot
   const renderProductRecord = (record, i) => {
-    // Determine display status & badge color (we do not mutate actual record.status;
-    // we only decide how to present it)
     const isFrozenDisplay = !!frozenMap[record.taskCode];
+    // If frozen, show Frozen text; if combo pending and not frozen show 'Pending' but in grey color
     const displayStatusText = isFrozenDisplay ? "Frozen" : record.status;
 
     const badgeColor =
-      isFrozenDisplay ? "#ff6b6b" : // light red for frozen
-      (record.status === "Pending" && record.comboGroupId) ? "#9aa7b6" : // grey for combo pending (submit-able)
+      isFrozenDisplay ? "#ff6b6b" : // light red
+      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#8f9fa8" : // grey for submit-able combo pending
       record.status === "Pending" ? "#ff9f1c" :
       record.status === "Completed" ? START_BLUE : "#8fadc7";
 
-    // Determine whether submit button should be shown:
-    // - For combo records: only allow submit if record is Pending and NOT frozen
-    // - Non-combo: original behaviour applies
     const showSubmitButton = (() => {
       if (submitted[record.taskCode] && record.status === "Completed") return true;
       if (record.comboGroupId) {
-        // combo item: only allow submit if record is Pending and NOT frozen
+        // combo item: only allow submit if record is Pending and NOT frozen and backend allows canSubmit
         return record.status === "Pending" && !isFrozenDisplay && record.canSubmit;
       }
       // non-combo: original conditions
@@ -404,10 +444,8 @@ const Records = () => {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ color: "#f5b500" }}>
-                  {/* simple 5-star visual */}
                   <span style={{ fontSize: 14 }}>★★★★★</span>
                 </div>
-                {/* If this record is part of a combo, show a small combo indicator */}
                 {record.comboGroupId && (
                   <div style={{ fontSize: 12, color: "#557088", marginLeft: 6, fontWeight: 700 }}>
                     Combo #{record.comboGroupId}
@@ -456,7 +494,6 @@ const Records = () => {
               </div>
             </div>
             <div style={{ width: 140, marginLeft: 12 }}>
-              {/* show submit button only when appropriate */}
               {showSubmitButton && (
                 <button
                   className="submit-btn"
@@ -546,8 +583,6 @@ const Records = () => {
         }
       `}</style>
 
-      {/* Do not render a local Header here so the global header from Layout is used */}
-
       <SpinnerOverlay show={showSpinner} />
       <GreyToast show={greyToast.show} message={greyToast.message} />
 
@@ -564,7 +599,6 @@ const Records = () => {
                 className={`records-tab ${activeTab === t ? "active" : ""}`}
                 onClick={() => {
                   setActiveTab(t);
-                  // refresh immediately when switching to Pending or All so user sees up-to-date pending items
                   if (refreshRecords) refreshRecords();
                 }}
               >
@@ -586,16 +620,11 @@ const Records = () => {
             )}
           </div>
 
-          {/* informational foot note inside gradient */}
           <div style={{ marginTop: 28, color: "rgba(255,255,255,0.85)", fontSize: 13 }}>
-            <p style={{ margin: 0 }}>
-              
-            </p>
+            <p style={{ margin: 0 }}></p>
           </div>
         </div>
       </div>
-
-      {/* Removed local bottom navbars so the app's global footer/header remain single and consistent */}
     </div>
   );
 };
