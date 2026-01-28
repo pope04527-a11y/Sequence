@@ -10,6 +10,11 @@ import notifIcon from "../assets/images/profile/notif.png";
 // Notification bell component
 import NotificationBell from "../components/NotificationBell";
 
+// Import the update pages so clicking Edit navigates to the actual pages
+// (these files already exist in your src/pages folder)
+import UpdatePassword from "./UpdatePassword.jsx";
+import UpdateWithdrawPassword from "./UpdateWithdrawPassword.jsx";
+
 // ---- Updated: Use your custom API domain ----
 const API_URL = "https://stacksapp-backend-main.onrender.com";
 
@@ -211,13 +216,6 @@ function WithdrawPasswordModalProfile({
     </div>
   );
 }
-
-/* Per your request: import/resolve the update pages AFTER the password modal definitions.
-   We use React.lazy so the page bundles are only loaded when needed. This keeps the
-   modal definitions physically above these imports while still providing working routes/navigation.
-*/
-const UpdatePasswordPage = React.lazy(() => import("./UpdatePassword"));
-const UpdateWithdrawPasswordPage = React.lazy(() => import("./UpdateWithdrawPassword"));
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -424,8 +422,8 @@ export default function Profile() {
           {/* Rows: Full Name (no edit), Password (edit), Withdraw Password (edit), Bind Wallet Address (edit) */}
           <div>
             <Row label="Full Name" value={fullName} showEdit={false} />
-            <Row label="Password" value={"••••••••"} onEdit={() => navigate("/UpdatePassword")} editText="Edit Password" />
-            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => navigate("/UpdateWithdrawPassword")} editText="Edit Password" />
+            <Row label="Password" value={"••••••••"} onEdit={() => navigate("/update-password")} editText="Edit Password" />
+            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => navigate("/update-withdraw-password")} editText="Edit Password" />
             <Row label="Bind Wallet Address" value={walletAddress} onEdit={() => handleProtectedRoute("/bind-wallet")} editText="Edit Wallet Address" />
           </div>
         </section>
