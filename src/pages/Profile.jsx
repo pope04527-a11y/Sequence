@@ -422,8 +422,8 @@ export default function Profile() {
           {/* Rows: Full Name (no edit), Password (edit), Withdraw Password (edit), Bind Wallet Address (edit) */}
           <div>
             <Row label="Full Name" value={fullName} showEdit={false} />
-            <Row label="Password" value={"••••••••"} onEdit={() => navigate("/update-password")} editText="Edit Password" />
-            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => navigate("/update-withdraw-password")} editText="Edit Password" />
+            <Row label="Password" value={"••••••••"} onEdit={() => handleProtectedRoute("/update-password")} editText="Edit Password" />
+            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => handleProtectedRoute("/update-withdraw-password")} editText="Edit Password" />
             <Row label="Bind Wallet Address" value={walletAddress} onEdit={() => handleProtectedRoute("/bind-wallet")} editText="Edit Wallet Address" />
           </div>
         </section>
