@@ -14,11 +14,13 @@ import recordsIcon from "../assets/images/tabBar/records.png";
   Changes implemented in this file:
   - Ensure pending tasks are fetched immediately on mount by awaiting refreshRecords()
     and hiding the spinner only after the first successful fetch.
+  - Refresh records when the page/tab gains focus so pending items show immediately when navigating.
   - For combo groups with multiple pending items: mark one item as "Frozen" (display-only,
-    shown with a red badge) and keep the other(s) as normal Pending items.
-  - When a combo is assigned, ensure the (normal) Pending product(s) are shown on top
-    (priority ordering) and they have a Submit button. The Frozen combo item will be visible
-    but not submittable.
+    shown with a light red badge) and keep the other(s) as normal Pending items. The frozen
+    item is chosen as the last pending in the group so the submit-able item(s) appear on top.
+  - The submit-able combo item displays a grey "Pending" badge (as requested) and is shown above
+    the frozen item. The frozen item displays "Frozen" in light red.
+  - When combo pending items exist they are prioritized to the top of the list and have submitting enabled.
   - Kept the rest of the file logic, layout and behavior intact.
 */
 
@@ -143,8 +145,19 @@ const Records = () => {
       }
     };
     doInitialFetch();
+
+    // Refresh again when window/tab regains focus so pending items appear immediately when navigating back
+    const handleFocus = () => {
+      if (refreshRecords) refreshRecords();
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && refreshRecords) refreshRecords();
+    });
+
     return () => {
       mounted = false;
+      window.removeEventListener("focus", handleFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
@@ -233,12 +246,13 @@ const Records = () => {
 
   // Build pending combo groups & frozen mapping:
   const pendingComboGroups = getPendingComboGroups(filteredRecords);
+
   // frozenMap: mark one item per combo group as "Frozen" for display (red badge)
-  // Rule: if a group has 2+ pending items, freeze the earliest (index 0) to be the frozen red one.
+  // Rule: if a group has 2+ pending items, freeze the LAST pending item (so submit-able item(s) appear on top)
   const frozenMap = {};
   Object.values(pendingComboGroups).forEach((group) => {
     if (group.length >= 2) {
-      const frozenRec = group[0];
+      const frozenRec = group[group.length - 1]; // freeze last pending in group
       if (frozenRec && frozenRec.taskCode) {
         frozenMap[frozenRec.taskCode] = true;
       }
@@ -305,32 +319,30 @@ const Records = () => {
     // Determine display status & badge color (we do not mutate actual record.status;
     // we only decide how to present it)
     const isFrozenDisplay = !!frozenMap[record.taskCode];
-    const displayStatus = isFrozenDisplay ? "Frozen" : record.status;
+    const displayStatusText = isFrozenDisplay ? "Frozen" : record.status;
 
     const badgeColor =
-      displayStatus === "Pending" ? "#ff9f1c" :
-      displayStatus === "Frozen" ? "#ff6b6b" :
-      displayStatus === "Completed" ? START_BLUE : "#8fadc7";
+      isFrozenDisplay ? "#ff6b6b" : // light red for frozen
+      (record.status === "Pending" && record.comboGroupId) ? "#9aa7b6" : // grey for combo pending (submit-able)
+      record.status === "Pending" ? "#ff9f1c" :
+      record.status === "Completed" ? START_BLUE : "#8fadc7";
 
     // Determine whether submit button should be shown:
-    // - Keep original behaviour for non-combo records.
-    // - For combo records: allow submitting for Pending items that are NOT the frozen one.
+    // - For combo records: only allow submit if record is Pending and NOT frozen
+    // - Non-combo: original behaviour applies
     const showSubmitButton = (() => {
       if (submitted[record.taskCode] && record.status === "Completed") return true;
       if (record.comboGroupId) {
         // combo item: only allow submit if record is Pending and NOT frozen
-        return record.status === "Pending" && !isFrozenDisplay;
+        return record.status === "Pending" && !isFrozenDisplay && record.canSubmit;
       }
       // non-combo: original conditions
       if (record.status === "Pending" && (!record.isCombo || record.canSubmit)) {
-        // also ensure that if part of combo and not allowed by lastPendingComboTaskCodes we still respect canSubmit
         return true;
       }
       return false;
     })();
 
-    // Additional guard used earlier: lastPendingComboTaskCodes or canSubmit used to gate some combos.
-    // We'll still check record.canSubmit to avoid exposing submit where backend disallows it.
     const isDisabledSubmit = submitting[record.taskCode] || submitted[record.taskCode] || !record.canSubmit;
 
     return (
@@ -415,7 +427,7 @@ const Records = () => {
                 fontSize: 12,
                 textTransform: "capitalize"
               }}>
-                {displayStatus}
+                {displayStatusText}
               </div>
             </div>
           </div>
@@ -550,7 +562,11 @@ const Records = () => {
                 role="tab"
                 aria-selected={activeTab === t}
                 className={`records-tab ${activeTab === t ? "active" : ""}`}
-                onClick={() => setActiveTab(t)}
+                onClick={() => {
+                  setActiveTab(t);
+                  // refresh immediately when switching to Pending or All so user sees up-to-date pending items
+                  if (refreshRecords) refreshRecords();
+                }}
               >
                 {t}
               </div>
