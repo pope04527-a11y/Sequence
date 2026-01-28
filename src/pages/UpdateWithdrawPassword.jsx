@@ -51,109 +51,117 @@ export default function UpdateWithdrawPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20 flex items-center justify-center" style={{alignItems: "flex-start"}}>
-      <div className="w-full max-w-md">
-        {/* Header - flush to top, blue back arrow */}
-        <div
-          className="bg-[#2d2d2d] text-white text-center py-3 font-semibold text-lg relative flex items-center justify-center"
-          style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
-        >
-          <button
-            aria-label="Back"
-            onClick={() => navigate(-1)}
+    <div
+      style={{
+        background: "linear-gradient(120deg, #071e2f 0%, #0f2b45 30%, #16384e 60%, #0f4f63 100%)",
+        paddingTop: 28,
+        paddingBottom: 12, // small space left under form
+        color: "#fff",
+      }}
+    >
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          {/* Page title */}
+          <h1 style={{ color: "#fff", fontSize: 36, margin: "22px 0 12px", fontWeight: 800, textAlign: "left" }}>
+            Update Withdrawal Password
+          </h1>
+
+          {/* Thin blue divider */}
+          <div
             style={{
-              position: "absolute",
-              left: 16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0,
-              cursor: "pointer",
-              lineHeight: 1,
-              zIndex: 1,
+              height: 8,
+              background: "linear-gradient(90deg, rgba(31,143,192,1), rgba(33,230,193,1))",
+              borderRadius: 6,
+              margin: "6px 0 24px",
+              width: "100%",
             }}
-          >
-            <svg width={28} height={28} viewBox="0 0 22 22">
-              <polyline
-                points="14,5 8,11 14,17"
-                fill="none"
-                stroke={START_BLUE}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <span>Update Withdrawal Password</span>
-        </div>
-        <div className="bg-white shadow rounded-b px-8 py-6">
-          {showSuccess ? (
-            <div className="text-center">
-              <div className="text-green-600 font-semibold mb-4">
-                Withdrawal password updated successfully!<br />
-                Redirecting to profile...
+          />
+
+          <div style={{ paddingBottom: 8, maxWidth: 720 }}>
+            {showSuccess ? (
+              <div style={{ background: "rgba(255,255,255,0.02)", padding: 20, borderRadius: 12 }}>
+                <div style={{ color: "#9ae6b4", fontWeight: 700, marginBottom: 8 }}>
+                  Withdrawal password updated successfully!
+                </div>
+                <div style={{ color: "#cbd5e1" }}>Redirecting to profile in 4 seconds...</div>
               </div>
-              <div className="text-gray-400">You will be redirected in 4 seconds.</div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Old Password"
-                type="password"
-                value={oldPassword}
-                onChange={setOldPassword}
-              />
-              <Input
-                label="New Password"
-                type="password"
-                value={newPassword}
-                onChange={setNewPassword}
-              />
-              <Input
-                label="Confirm New Password"
-                type="password"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-              />
-              {errorMsg && (
-                <div className="text-red-500 text-sm">{errorMsg}</div>
-              )}
-              <button
-                type="submit"
-                className="w-full"
-                style={{
-                  background: START_BLUE,
-                  color: "#fff",
-                  padding: "0.5rem",
-                  borderRadius: "0.375rem",
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  marginTop: "0.25rem",
-                  transition: "opacity 0.2s",
-                  opacity: loading ? 0.7 : 1,
-                  border: "none",
-                }}
-                disabled={loading}
-              >
-                {loading ? "Updating..." : "Update"}
-              </button>
-            </form>
-          )}
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label="Old Password"
+                  type="password"
+                  value={oldPassword}
+                  onChange={setOldPassword}
+                  placeholder="Enter old withdrawal password"
+                />
+                <Input
+                  label="New Password"
+                  type="password"
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  placeholder="Enter new withdrawal password"
+                />
+                <Input
+                  label="Confirm New Password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  placeholder="Confirm new withdrawal password"
+                />
+                {errorMsg && (
+                  <div className="text-red-500 text-sm" style={{ color: "#ff7b7b", marginTop: 6 }}>{errorMsg}</div>
+                )}
+
+                {/* Centered update button with narrower width as requested */}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <button
+                    type="submit"
+                    style={{
+                      background: START_BLUE,
+                      color: "#fff",
+                      padding: "0.65rem 2.5rem",
+                      borderRadius: "0.75rem",
+                      fontWeight: 700,
+                      fontSize: "1rem",
+                      marginTop: "0.75rem",
+                      transition: "opacity 0.2s",
+                      opacity: loading ? 0.7 : 1,
+                      border: "none",
+                      width: 260,
+                      maxWidth: "80%",
+                      textAlign: "center",
+                      cursor: "pointer",
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? "Updating..." : "Update"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-function Input({ label, type, value, onChange }) {
+function Input({ label, type, value, onChange, placeholder }) {
   return (
-    <div>
-      <label className="block mb-1 font-medium">{label}</label>
+    <div style={{ marginBottom: 12 }}>
+      <label className="block mb-1 font-semibold" style={{ color: "#ffffff", marginBottom: 8 }}>{label}</label>
       <input
         type={type}
+        placeholder={placeholder || ""}
         className="w-full border rounded px-3 py-2"
+        style={{
+          width: "100%",
+          padding: "12px 14px",
+          borderRadius: 10,
+          background: "#ffffff",
+          color: "#1f2937",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
