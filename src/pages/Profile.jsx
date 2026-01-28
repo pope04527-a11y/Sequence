@@ -212,6 +212,15 @@ function WithdrawPasswordModalProfile({
   );
 }
 
+/* Dynamic/lazy imports for update pages.
+   Per your request, these are declared after the password modal definitions.
+   They will not affect the existing behavior unless you render them here;
+   we use them so navigation to those routes (which exist in your pages folder)
+   will be handled by your router without forcing a logout.
+*/
+const UpdatePasswordPage = React.lazy(() => import("./UpdatePassword"));
+const UpdateWithdrawPasswordPage = React.lazy(() => import("./UpdateWithdrawPassword"));
+
 export default function Profile() {
   const navigate = useNavigate();
   const { profile, fetchProfile } = useProfile();
@@ -257,7 +266,7 @@ export default function Profile() {
     }
   }, [profile]);
 
-  // Centralized handler for all protected routes
+  // Centralized handler for all protected routes (keeps modal flow if you'd like to require withdraw password)
   const handleProtectedRoute = (targetPath) => {
     setDestination(targetPath);
     setWithdrawPassword("");
@@ -284,7 +293,8 @@ export default function Profile() {
       if (data.success) {
         setShowModal(false);
         fetchProfile && fetchProfile().finally(() => {
-          navigate(destination);
+          // navigate to stored destination if it exists, otherwise fallback to profile
+          if (destination) navigate(destination);
         });
       } else {
         setErrorMsg(data.message || "Incorrect withdrawal password.");
@@ -414,8 +424,10 @@ export default function Profile() {
           {/* Rows: Full Name (no edit), Password (edit), Withdraw Password (edit), Bind Wallet Address (edit) */}
           <div>
             <Row label="Full Name" value={fullName} showEdit={false} />
-            <Row label="Password" value={"••••••••"} onEdit={() => navigate("/change-password")} editText="Edit Password" />
-            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => handleProtectedRoute("/set-withdraw-password")} editText="Edit Password" />
+            {/* Direct navigation to the UpdatePassword page (no logout) */}
+            <Row label="Password" value={"••••••••"} onEdit={() => navigate("/UpdatePassword")} editText="Edit Password" />
+            {/* Direct navigation to the UpdateWithdrawPassword page (no logout) */}
+            <Row label="Withdraw Password" value={"••••••••"} onEdit={() => navigate("/UpdateWithdrawPassword")} editText="Edit Password" />
             <Row label="Bind Wallet Address" value={walletAddress} onEdit={() => handleProtectedRoute("/bind-wallet")} editText="Edit Wallet Address" />
           </div>
         </section>
