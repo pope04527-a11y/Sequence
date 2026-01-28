@@ -11,14 +11,17 @@ import recordsIcon from "../assets/images/tabBar/records.png";
 /*
   Records.jsx
 
-  Notes on changes:
-  - Performs an aggressive initial refresh on mount (with retries) and when route becomes active,
-    so pending/combo tasks appear immediately without a manual page refresh.
-  - For combo groups with pending items:
-      * the last pending item in the group is marked "Frozen" (light red badge)
-      * other pending items for that combo group are shown above and get a grey "Pending" badge
-      * submit button is shown only for non-frozen pending combo items (and other original conditions)
-  - Kept original layout and behavior as requested.
+  Updated to:
+  - Use the actual fetch function exposed by TaskRecordsContext (fetchTaskRecords).
+    Previous code referenced refreshRecords which doesn't exist in the context you provided,
+    so the page's refresh attempts were no-ops. That prevented pending items from appearing
+    immediately. This file now uses fetchTaskRecords everywhere.
+  - Aggressively fetch on mount and when route becomes active (with short retries) so
+    pending items appear immediately without user manual refresh.
+  - Keep combo behaviour: the LAST pending item in a combo group is marked "Frozen"
+    (light red badge) and non-frozen pending combo items appear above it and show a
+    grey "Pending" badge + Submit button.
+  - Kept remaining UI and business logic unchanged.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -118,7 +121,8 @@ const Records = () => {
   const [activeTab, setActiveTab] = useState("All");
   const navigate = useNavigate();
   const location = useLocation();
-  const { records, submitTaskRecord, refreshRecords } = useTaskRecords();
+  // NOTE: the context exposes fetchTaskRecords (not refreshRecords)
+  const { records, submitTaskRecord, fetchTaskRecords, addTaskRecord, hasPendingTask } = useTaskRecords();
   const { balance, commissionToday, refreshProfile } = useBalance();
   const [submitting, setSubmitting] = useState({});
   const [submitted, setSubmitted] = useState({});
@@ -126,115 +130,102 @@ const Records = () => {
 
   const [showSpinner, setShowSpinner] = useState(true);
 
-  // Keep a ref of the latest records so async loops can inspect them
+  // Keep a ref to the latest records so async loops can inspect them immediately
   const recordsRef = useRef(records);
   useEffect(() => {
     recordsRef.current = records;
   }, [records]);
 
-  // Utility: sleep
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // Aggressive initial fetch with retries to ensure pending tasks show up immediately.
-  // This runs on mount and when the route becomes active.
+  // Aggressive initial fetch: call fetchTaskRecords repeatedly until we detect Pending items
   useEffect(() => {
     let cancelled = false;
-    const MAX_ATTEMPTS = 6;
-    const attemptFetchUntilPending = async () => {
+    (async () => {
       setShowSpinner(true);
+      const MAX_ATTEMPTS = 12;
+      const INTERVAL_MS = 500;
       try {
-        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS && !cancelled; attempt++) {
           try {
-            if (refreshRecords) {
-              // call refresh
-              await refreshRecords();
+            if (fetchTaskRecords) {
+              await fetchTaskRecords();
             }
-          } catch (e) {
-            // ignore per-attempt error; we'll retry
-            // console.error("refreshRecords error", e);
+          } catch (err) {
+            // ignore and retry
           }
-
-          // wait a bit to allow context to update
-          await sleep(700);
-
-          // If we've got pending records in the refreshed data, stop retrying
+          // allow context to update
+          await sleep(INTERVAL_MS);
           const list = recordsRef.current || [];
-          const hasPending = list.some((r) => r && r.status === "Pending");
-          // Debug log to help trace behavior locally
-          // console.log(`[Records] attempt ${attempt} - total ${list.length} - hasPending=${hasPending}`);
-          if (hasPending) break;
-          if (cancelled) break;
+          const pendingCount = list.filter((r) => r && String(r.status).toLowerCase() === "pending").length;
+          if (pendingCount > 0) break;
         }
       } finally {
         if (!cancelled) setShowSpinner(false);
       }
+    })();
+
+    // refresh when window/tab regains focus
+    const onFocus = () => {
+      if (fetchTaskRecords) fetchTaskRecords();
     };
+    const onVisibility = () => {
+      if (!document.hidden && fetchTaskRecords) fetchTaskRecords();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
 
-    // run on mount
-    attemptFetchUntilPending();
-
-    // also re-run when the user navigates back to this route (visibility/focus events handled below)
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // mount only
+  }, []); // run only once on mount
 
-  // When the window/tab gets focus or the route becomes active, re-run a short immediate refresh.
+  // Short refresh when the route becomes active (navigating to /records)
   useEffect(() => {
-    const handleFocus = () => {
-      if (refreshRecords) refreshRecords();
-    };
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && refreshRecords) refreshRecords();
-    });
-
-    // Also when the location changes to this page, trigger immediate refresh attempts
     let mounted = true;
-    const checkOnRouteEnter = async () => {
-      if (location.pathname === "/records" && mounted) {
-        setShowSpinner(true);
-        try {
-          // do a shorter retry loop
-          for (let i = 0; i < 4; i++) {
-            try {
-              if (refreshRecords) await refreshRecords();
-            } catch (e) {
-              // ignore
-            }
-            await sleep(600);
-            const hasPending = (recordsRef.current || []).some((r) => r && r.status === "Pending");
-            if (hasPending) break;
+    (async () => {
+      if (location.pathname !== "/records") return;
+      setShowSpinner(true);
+      try {
+        const ATTEMPTS = 6;
+        for (let i = 0; i < ATTEMPTS && mounted; i++) {
+          try {
+            if (fetchTaskRecords) await fetchTaskRecords();
+          } catch (e) {
+            // ignore
           }
-        } finally {
-          if (mounted) setShowSpinner(false);
+          await sleep(500);
+          const hasPending = (recordsRef.current || []).some((r) => r && String(r.status).toLowerCase() === "pending");
+          if (hasPending) break;
         }
+      } finally {
+        if (mounted) setShowSpinner(false);
       }
-    };
-    checkOnRouteEnter();
+    })();
 
     return () => {
       mounted = false;
-      window.removeEventListener("focus", handleFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Continue polling periodically (only after initial spinner hidden)
+  // Regular polling after initial load (kept to keep UI fresh)
   useEffect(() => {
     if (showSpinner) return;
-    const interval = setInterval(() => {
-      refreshRecords && refreshRecords();
+    const iv = setInterval(() => {
+      fetchTaskRecords && fetchTaskRecords();
     }, 4000);
-    return () => clearInterval(interval);
-  }, [showSpinner, refreshRecords]);
+    return () => clearInterval(iv);
+  }, [showSpinner, fetchTaskRecords]);
 
   // Helper: group pending combo items
   function getPendingComboGroups(recordsList) {
     const groups = {};
     for (const rec of recordsList) {
-      if (rec.status === "Pending" && rec.comboGroupId) {
+      if (String(rec.status).toLowerCase() === "pending" && rec.comboGroupId) {
         if (!groups[rec.comboGroupId]) groups[rec.comboGroupId] = [];
         groups[rec.comboGroupId].push(rec);
       }
@@ -287,7 +278,7 @@ const Records = () => {
       } else {
         setSubmitted((prev) => ({ ...prev, [task.taskCode]: true }));
         await refreshProfile();
-        refreshRecords && refreshRecords();
+        fetchTaskRecords && fetchTaskRecords();
         setTimeout(() => {
           setSubmitted((prev) => ({ ...prev, [task.taskCode]: false }));
         }, 1500);
@@ -295,6 +286,7 @@ const Records = () => {
     }, 3000);
   };
 
+  // Filter records by tab
   const filteredRecords = records.filter(
     (record) =>
       activeTab === "All" ||
@@ -305,11 +297,11 @@ const Records = () => {
   const pendingComboGroups = getPendingComboGroups(filteredRecords);
 
   // frozenMap: mark one item per combo group as "Frozen" for display (light red badge).
-  // Per your request: the submit-able product should be on top, so freeze the LAST pending item in group.
+  // Per request: the submit-able product should be on top, so freeze the LAST pending item in group.
   const frozenMap = {};
   Object.values(pendingComboGroups).forEach((group) => {
     if (group.length >= 2) {
-      const frozenRec = group[group.length - 1]; // freeze the last pending item
+      const frozenRec = group[group.length - 1]; // freeze last pending in group
       if (frozenRec && frozenRec.taskCode) {
         frozenMap[frozenRec.taskCode] = true;
       }
@@ -326,7 +318,6 @@ const Records = () => {
 
   const priorityList = [];
   Object.values(pendingComboGroups).forEach((group) => {
-    // group sorted ascending (oldest first)
     const nonFrozen = group.filter((r) => !frozenMap[r.taskCode]);
     const frozen = group.filter((r) => frozenMap[r.taskCode]);
 
@@ -365,8 +356,8 @@ const Records = () => {
     const displayStatusText = isFrozenDisplay ? "Frozen" : record.status;
 
     const badgeColor =
-      isFrozenDisplay ? "#ff6b6b" : // light red
-      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#8f9fa8" : // grey for submit-able combo pending
+      isFrozenDisplay ? "#ff6b6b" : // light red for frozen
+      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#9aa7b6" : // grey for submit-able combo pending
       record.status === "Pending" ? "#ff9f1c" :
       record.status === "Completed" ? START_BLUE : "#8fadc7";
 
@@ -444,6 +435,7 @@ const Records = () => {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ color: "#f5b500" }}>
+                  {/* simple 5-star visual */}
                   <span style={{ fontSize: 14 }}>★★★★★</span>
                 </div>
                 {record.comboGroupId && (
@@ -599,7 +591,7 @@ const Records = () => {
                 className={`records-tab ${activeTab === t ? "active" : ""}`}
                 onClick={() => {
                   setActiveTab(t);
-                  if (refreshRecords) refreshRecords();
+                  if (fetchTaskRecords) fetchTaskRecords();
                 }}
               >
                 {t}
