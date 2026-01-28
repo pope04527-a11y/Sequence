@@ -169,25 +169,32 @@ export default function UpdatePassword() {
               {errorMsg && (
                 <div className="text-red-500 text-sm" style={{ color: "#ff7b7b", marginTop: 6 }}>{errorMsg}</div>
               )}
-              <button
-                type="submit"
-                className="w-full"
-                style={{
-                  background: START_BLUE,
-                  color: "#fff",
-                  padding: "0.15rem", // small button height preserved from earlier change
-                  borderRadius: "0.75rem",
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  marginTop: "0.75rem",
-                  transition: "opacity 0.2s",
-                  opacity: loading ? 0.7 : 1,
-                  border: "none",
-                }}
-                disabled={loading}
-              >
-                {loading ? "Updating..." : "Update"}
-              </button>
+
+              {/* Centered update button with narrower width as requested */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: START_BLUE,
+                    color: "#fff",
+                    padding: "0.65rem 2.5rem",
+                    borderRadius: "0.75rem",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    marginTop: "0.75rem",
+                    transition: "opacity 0.2s",
+                    opacity: loading ? 0.7 : 1,
+                    border: "none",
+                    width: 260,
+                    maxWidth: "80%",
+                    textAlign: "center",
+                    cursor: "pointer",
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? "Updating..." : "Update"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
