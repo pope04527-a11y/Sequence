@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/header/logo_black.png";
 import menuIcon from "../assets/images/header/menu.svg";
 import refreshIcon from "../assets/images/header/logout.svg";
@@ -75,6 +75,8 @@ function Sidebar({ open, onClose }) {
 
 // HEADER
 function Header({ onMenuClick }) {
+  const navigate = useNavigate();
+
   return (
     <header className="header">
       <div className="header-bar">
@@ -82,7 +84,14 @@ function Header({ onMenuClick }) {
         <div className="header-logo-wrap">
           <img src={logo} alt="Sequence Logo" className="header-logo" />
         </div>
-        <img src={refreshIcon} alt="Refresh" className="header-icon" />
+        {/* make this icon navigate to the logout route (same behaviour as the header component in components/Header.jsx) */}
+        <img
+          src={refreshIcon}
+          alt="Logout"
+          className="header-icon"
+          onClick={() => navigate("/logout")}
+          style={{ cursor: "pointer" }}
+        />
       </div>
     </header>
   );
