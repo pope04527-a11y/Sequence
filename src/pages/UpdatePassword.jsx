@@ -114,100 +114,101 @@ export default function UpdatePassword() {
   }, [fadeMsg, navigate]);
 
   return (
-    <div className="min-h-screen bg-white pb-20 flex items-center justify-center" style={{ alignItems: "flex-start" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(120deg, #071e2f 0%, #0f2b45 30%, #16384e 60%, #0f4f63 100%)",
+        paddingTop: 28,
+        paddingBottom: 80,
+        color: "#fff",
+      }}
+    >
       {fadeMsg && <FadeMessage message={fadeMsg} />}
-      <div className="w-full max-w-md">
-        {/* Header - now flush to top, with blue back arrow */}
-        <div
-          className="bg-[#2d2d2d] text-white text-center py-3 font-semibold text-lg relative flex items-center justify-center"
-          style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
-        >
-          <button
-            aria-label="Back"
-            onClick={() => navigate(-1)}
+
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          {/* Page title */}
+          <h1 style={{ color: "#fff", fontSize: 36, margin: "22px 0 12px", fontWeight: 800, textAlign: "left" }}>
+            Update Login Password
+          </h1>
+
+          {/* Thin blue divider */}
+          <div
             style={{
-              position: "absolute",
-              left: 16,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0,
-              cursor: "pointer",
-              lineHeight: 1,
-              zIndex: 1,
+              height: 8,
+              background: "linear-gradient(90deg, rgba(31,143,192,1), rgba(33,230,193,1))",
+              borderRadius: 6,
+              margin: "6px 0 24px",
+              width: "100%",
             }}
-          >
-            <svg width={28} height={28} viewBox="0 0 22 22">
-              <polyline
-                points="14,5 8,11 14,17"
-                fill="none"
-                stroke={START_BLUE}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          />
+
+          {/* Form card (visually similar to Bind Wallet style) */}
+          <div style={{ paddingBottom: 24 }}>
+            <form onSubmit={handleSubmit} className="space-y-4" style={{ maxWidth: 720 }}>
+              <Input
+                label="Old Password"
+                type="password"
+                value={oldPassword}
+                onChange={setOldPassword}
               />
-            </svg>
-          </button>
-          <span>Update Password</span>
+              <Input
+                label="New Password"
+                type="password"
+                value={newPassword}
+                onChange={setNewPassword}
+              />
+              <Input
+                label="Confirm New Password"
+                type="password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+              />
+              {errorMsg && (
+                <div className="text-red-500 text-sm" style={{ color: "#ff7b7b", marginTop: 6 }}>{errorMsg}</div>
+              )}
+              <button
+                type="submit"
+                className="w-full"
+                style={{
+                  background: START_BLUE,
+                  color: "#fff",
+                  padding: "0.75rem",
+                  borderRadius: "0.75rem",
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  marginTop: "0.75rem",
+                  transition: "opacity 0.2s",
+                  opacity: loading ? 0.7 : 1,
+                  border: "none",
+                }}
+                disabled={loading}
+              >
+                {loading ? "Updating..." : "Update"}
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="bg-white shadow rounded-b px-8 py-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Old Password"
-              type="password"
-              value={oldPassword}
-              onChange={setOldPassword}
-            />
-            <Input
-              label="New Password"
-              type="password"
-              value={newPassword}
-              onChange={setNewPassword}
-            />
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-            />
-            {errorMsg && (
-              <div className="text-red-500 text-sm">{errorMsg}</div>
-            )}
-            <button
-              type="submit"
-              className="w-full"
-              style={{
-                background: START_BLUE,
-                color: "#fff",
-                padding: "0.5rem",
-                borderRadius: "0.375rem",
-                fontWeight: 600,
-                fontSize: "1rem",
-                marginTop: "0.25rem",
-                transition: "opacity 0.2s",
-                opacity: loading ? 0.7 : 1,
-                border: "none",
-              }}
-              disabled={loading}
-            >
-              {loading ? "Updating..." : "Update"}
-            </button>
-          </form>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
 
 function Input({ label, type, value, onChange }) {
   return (
-    <div>
-      <label className="block mb-1 font-medium">{label}</label>
+    <div style={{ marginBottom: 12 }}>
+      <label className="block mb-1 font-semibold" style={{ color: "#ffffff", marginBottom: 8 }}>{label}</label>
       <input
         type={type}
         className="w-full border rounded px-3 py-2"
+        style={{
+          width: "100%",
+          padding: "12px 14px",
+          borderRadius: 10,
+          background: "#ffffff",
+          color: "#1f2937",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
