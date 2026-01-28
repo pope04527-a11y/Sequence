@@ -11,12 +11,15 @@ import recordsIcon from "../assets/images/tabBar/records.png";
 /*
   Records.jsx
 
-  Changes:
-  - Removed the local Header render so the page uses the global header (provided by Layout).
-  - Removed the page-level bottom navigation bar so no duplicate navbars appear.
-  - Ensured every product name is displayed in Title Case (capitalized words).
-  - Kept all logic intact (fetching records, submit flow, combo handling, toasts, timers).
-  - Kept the platform gradient/color styling and the updated order card layout from previous changes.
+  Changes implemented in this file:
+  - Ensure pending tasks are fetched immediately on mount by awaiting refreshRecords()
+    and hiding the spinner only after the first successful fetch.
+  - For combo groups with multiple pending items: mark one item as "Frozen" (display-only,
+    shown with a red badge) and keep the other(s) as normal Pending items.
+  - When a combo is assigned, ensure the (normal) Pending product(s) are shown on top
+    (priority ordering) and they have a Submit button. The Frozen combo item will be visible
+    but not submittable.
+  - Kept the rest of the file logic, layout and behavior intact.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -123,37 +126,55 @@ const Records = () => {
 
   const [showSpinner, setShowSpinner] = useState(true);
 
+  // Ensure we fetch records immediately and wait for the first fetch to complete
   useEffect(() => {
-    setShowSpinner(true);
-    refreshRecords && refreshRecords();
-    const timer = setTimeout(() => {
-      setShowSpinner(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    let mounted = true;
+    const doInitialFetch = async () => {
+      setShowSpinner(true);
+      try {
+        if (refreshRecords) {
+          // await so UI waits for the first data to arrive
+          await refreshRecords();
+        }
+      } catch (e) {
+        // ignore network errors here; spinner will hide
+      } finally {
+        if (mounted) setShowSpinner(false);
+      }
+    };
+    doInitialFetch();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
+  // Continue polling for updates (but only after initial spinner is hidden)
   useEffect(() => {
     if (showSpinner) return;
     const interval = setInterval(() => {
       refreshRecords && refreshRecords();
-    }, 1000);
+    }, 3000); // reasonable polling interval
     return () => clearInterval(interval);
   }, [showSpinner, refreshRecords]);
 
-  function getPendingComboGroups(records) {
+  // Build combo groups (pending) and prepare frozen mapping
+  function getPendingComboGroups(recordsList) {
     const groups = {};
-    for (const rec of records) {
+    for (const rec of recordsList) {
       if (rec.status === "Pending" && rec.comboGroupId) {
         if (!groups[rec.comboGroupId]) groups[rec.comboGroupId] = [];
         groups[rec.comboGroupId].push(rec);
       }
     }
+    // Sort each group's records by creation time ascending (oldest first)
     Object.values(groups).forEach(arr =>
       arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     );
     return groups;
   }
 
+  // Choose last pending's taskCode in a group (used by some logic)
   function getLastPendingComboTaskCode(comboRecords) {
     if (!comboRecords || comboRecords.length === 0) return null;
     return comboRecords[comboRecords.length - 1].taskCode;
@@ -210,21 +231,62 @@ const Records = () => {
       (record.status && record.status.toLowerCase() === activeTab.toLowerCase())
   );
 
+  // Build pending combo groups & frozen mapping:
   const pendingComboGroups = getPendingComboGroups(filteredRecords);
+  // frozenMap: mark one item per combo group as "Frozen" for display (red badge)
+  // Rule: if a group has 2+ pending items, freeze the earliest (index 0) to be the frozen red one.
+  const frozenMap = {};
+  Object.values(pendingComboGroups).forEach((group) => {
+    if (group.length >= 2) {
+      const frozenRec = group[0];
+      if (frozenRec && frozenRec.taskCode) {
+        frozenMap[frozenRec.taskCode] = true;
+      }
+    }
+  });
+
+  // lastPendingComboTaskCodes is still useful for some conditions (kept)
   const lastPendingComboTaskCodes = Object.values(pendingComboGroups).map(getLastPendingComboTaskCode);
 
-  const sortedRecords = [...filteredRecords].sort((a, b) => {
-    if (
-      a.comboGroupId &&
-      b.comboGroupId &&
-      a.comboGroupId === b.comboGroupId &&
-      a.status === "Pending" &&
-      b.status === "Pending"
-    ) {
-      return (b.canSubmit ? 1 : 0) - (a.canSubmit ? 1 : 0);
-    }
-    return new Date(b.startedAt || b.createdAt) - new Date(a.startedAt || a.createdAt);
+  // Sort records but give priority to pending combo groups:
+  // - For each combo group with pending items, include the group's non-frozen pending items first (so they appear on top),
+  //   then include the frozen one (if any), preserving chronological order within.
+  // - Then append all other records (non-pending-combo) in the default sorted order.
+  const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
+
+  // Copy filteredRecords to avoid mutating source
+  const remaining = [...filteredRecords];
+
+  // Build priority list
+  const priorityList = [];
+  Object.values(pendingComboGroups).forEach((group) => {
+    // group is sorted ascending by createdAt (oldest first)
+    // We want pending non-frozen items first (these will be submittable),
+    // then the frozen item last for that group.
+    const nonFrozen = group.filter((r) => !frozenMap[r.taskCode]);
+    const frozen = group.filter((r) => frozenMap[r.taskCode]);
+
+    // push non-frozen (preserve original order)
+    nonFrozen.forEach((r) => {
+      priorityList.push(r);
+      // remove from remaining
+      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
+      if (idx !== -1) remaining.splice(idx, 1);
+    });
+
+    // push frozen afterwards
+    frozen.forEach((r) => {
+      priorityList.push(r);
+      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
+      if (idx !== -1) remaining.splice(idx, 1);
+    });
   });
+
+  // For all other records, sort by date desc (existing behaviour)
+  remaining.sort(byDateDesc);
+
+  // Final sortedRecords: priority first, then the rest
+  const sortedRecords = [...priorityList, ...remaining];
 
   const getRecordImage = (product) => {
     if (
@@ -240,10 +302,36 @@ const Records = () => {
 
   // Render single record row styled like screenshot
   const renderProductRecord = (record, i) => {
+    // Determine display status & badge color (we do not mutate actual record.status;
+    // we only decide how to present it)
+    const isFrozenDisplay = !!frozenMap[record.taskCode];
+    const displayStatus = isFrozenDisplay ? "Frozen" : record.status;
+
     const badgeColor =
-      record.status === "Pending" ? "#ff9f1c" :
-      record.status === "Frozen" ? "#ff6b6b" :
-      record.status === "Completed" ? START_BLUE : "#8fadc7";
+      displayStatus === "Pending" ? "#ff9f1c" :
+      displayStatus === "Frozen" ? "#ff6b6b" :
+      displayStatus === "Completed" ? START_BLUE : "#8fadc7";
+
+    // Determine whether submit button should be shown:
+    // - Keep original behaviour for non-combo records.
+    // - For combo records: allow submitting for Pending items that are NOT the frozen one.
+    const showSubmitButton = (() => {
+      if (submitted[record.taskCode] && record.status === "Completed") return true;
+      if (record.comboGroupId) {
+        // combo item: only allow submit if record is Pending and NOT frozen
+        return record.status === "Pending" && !isFrozenDisplay;
+      }
+      // non-combo: original conditions
+      if (record.status === "Pending" && (!record.isCombo || record.canSubmit)) {
+        // also ensure that if part of combo and not allowed by lastPendingComboTaskCodes we still respect canSubmit
+        return true;
+      }
+      return false;
+    })();
+
+    // Additional guard used earlier: lastPendingComboTaskCodes or canSubmit used to gate some combos.
+    // We'll still check record.canSubmit to avoid exposing submit where backend disallows it.
+    const isDisabledSubmit = submitting[record.taskCode] || submitted[record.taskCode] || !record.canSubmit;
 
     return (
       <div
@@ -307,6 +395,12 @@ const Records = () => {
                   {/* simple 5-star visual */}
                   <span style={{ fontSize: 14 }}>★★★★★</span>
                 </div>
+                {/* If this record is part of a combo, show a small combo indicator */}
+                {record.comboGroupId && (
+                  <div style={{ fontSize: 12, color: "#557088", marginLeft: 6, fontWeight: 700 }}>
+                    Combo #{record.comboGroupId}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -321,7 +415,7 @@ const Records = () => {
                 fontSize: 12,
                 textTransform: "capitalize"
               }}>
-                {record.status}
+                {displayStatus}
               </div>
             </div>
           </div>
@@ -351,32 +445,25 @@ const Records = () => {
             </div>
             <div style={{ width: 140, marginLeft: 12 }}>
               {/* show submit button only when appropriate */}
-              {(
-                ((record.status === "Pending" && (!record.isCombo || record.canSubmit)) ||
-                  (submitted[record.taskCode] && record.status === "Completed"))
-              ) && (
-                (!record.comboGroupId ||
-                  lastPendingComboTaskCodes.includes(record.taskCode) ||
-                  record.canSubmit) && (
-                  <button
-                    className="submit-btn"
-                    onClick={() => handleSubmit(record)}
-                    disabled={submitting[record.taskCode] || submitted[record.taskCode]}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      background: submitted[record.taskCode] ? START_BLUE : START_BLUE,
-                      color: "#fff",
-                      borderRadius: 10,
-                      border: "none",
-                      fontWeight: 700,
-                      cursor: submitting[record.taskCode] ? "wait" : "pointer",
-                      boxShadow: `0 6px 18px ${START_BLUE}22`
-                    }}
-                  >
-                    {submitting[record.taskCode] ? "Submitting..." : submitted[record.taskCode] ? "Submitted" : "Submit"}
-                  </button>
-                )
+              {showSubmitButton && (
+                <button
+                  className="submit-btn"
+                  onClick={() => handleSubmit(record)}
+                  disabled={isDisabledSubmit}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    background: submitted[record.taskCode] ? START_BLUE : START_BLUE,
+                    color: "#fff",
+                    borderRadius: 10,
+                    border: "none",
+                    fontWeight: 700,
+                    cursor: isDisabledSubmit ? "wait" : "pointer",
+                    boxShadow: `0 6px 18px ${START_BLUE}22`
+                  }}
+                >
+                  {submitting[record.taskCode] ? "Submitting..." : submitted[record.taskCode] ? "Submitted" : "Submit"}
+                </button>
               )}
             </div>
           </div>
