@@ -158,12 +158,10 @@ function BannerSlider() {
     let trackWidth = 0;
 
     function setTrackWidth() {
-      if (trackRef.current) {
-        // The track contains duplicated slides; use half the scrollWidth so the loop aligns.
-        // Use getBoundingClientRect width of the container to compute slide width reliably.
-        const container = trackRef.current;
-        trackWidth = Math.max(1, container.scrollWidth / 2);
-      }
+      if (!trackRef.current) return;
+      // trackRef.current.scrollWidth is total width of duplicated slides.
+      // half of it is one full cycle. This will work correctly when slides are exactly the container width.
+      trackWidth = Math.max(1, trackRef.current.scrollWidth / 2);
     }
 
     setTrackWidth();
@@ -174,7 +172,6 @@ function BannerSlider() {
       const elapsed = (ts - start) / 1000;
       const px = (elapsed * pxPerSec) % trackWidth;
       if (trackRef.current) {
-        // Move the whole track left; slides are full-container width so each image fully enters the card as it animates.
         trackRef.current.style.transform = `translateX(-${px}px)`;
       }
       animationFrameId = requestAnimationFrame(animateBanner);
@@ -193,45 +190,34 @@ function BannerSlider() {
   return (
     <section className="dashboard-banner-section banner-slider-container" aria-label="Banner slider">
       <style>{`
-        /*
-          Banner adjustments to make it full-bleed (no left/right gaps) and ensure
-          images always cover the card area and animate seamlessly into each other.
-
-          Key points implemented:
-          - Make the banner element full-bleed by using width:100vw and centering technique
-            (left:50% translateX(-50%)) so it extends to the viewport edges regardless of page padding.
-          - Slides fill the container exactly (no padding/margins) and are placed adjacent with no gaps.
-          - Images use object-fit: cover so they completely fill the card area (no top/bottom white gaps).
-          - Track transforms with translateX produce a continuous sliding effect; duplicated slides preserved.
+        /* Make the banner match the centered page container so slides align exactly with the sections.
+           Slides will be exactly the container width, adjacent to each other, and images will cover the slide area.
         */
 
-        /* full-bleed container: spans viewport width even when inside a centered page container */
+        /* Use the page's centering: the banner container uses max-width to match main content (1100px)
+           and centers with margin:auto. This prevents any left/right overflow and keeps slides aligned
+           with the other section cards on all devices.
+        */
         .banner-slider-container {
-          position: relative;
-          left: 50%;
-          right: 50%;
-          margin-left: -50vw;
-          margin-right: -50vw;
-          width: 100vw;
+          width: 100%;
+          max-width: 1100px; /* match your page's main max width */
+          margin: 0 auto; /* center like other content */
           box-sizing: border-box;
           overflow: hidden;
+          padding: 0; /* no padding so edges align */
           z-index: 0;
-          padding: 0; /* remove any internal spacing */
         }
 
-        /* track: horizontal flex row, no gaps between slides */
         .banner-slider-track-continuous {
           display: flex;
           flex-direction: row;
           align-items: stretch;
-          width: 100%;
-          will-change: transform;
           gap: 0;
+          will-change: transform;
           z-index: 0;
-          transition: transform 0.06s linear;
         }
 
-        /* each slide exactly equals the banner viewport width and height (no margins) */
+        /* Each slide uses 100% of the container width (not the viewport). This keeps images aligned with sections. */
         .banner-slider-slide-continuous {
           flex: 0 0 100%;
           width: 100%;
@@ -242,9 +228,7 @@ function BannerSlider() {
           overflow: hidden;
         }
 
-        /* image: cover whole slide area; center the image.
-           Using cover ensures the card has no empty space top/bottom and the visual fills edge-to-edge.
-        */
+        /* Image fills slide area; object-fit: cover ensures card is fully filled (no top/bottom gaps) */
         .banner-slider-slide-continuous .banner-slider-img {
           display: block;
           width: 100%;
@@ -255,10 +239,8 @@ function BannerSlider() {
           pointer-events: none;
         }
 
-        /* Banner heights (kept larger than other sections).
-           Use explicit heights for the track so slides are identical and adjacent.
-        */
-        .dashboard-banner-section { min-height: 320px; height: auto; }
+        /* Banner heights (kept larger than regular cards) */
+        .dashboard-banner-section { min-height: 320px; }
         .banner-slider-track-continuous,
         .banner-slider-slide-continuous { height: 320px; }
 
@@ -280,14 +262,12 @@ function BannerSlider() {
           .dashboard-banner-section { min-height: 200px; }
         }
 
-        /* Ensure sections render above the track */
+        /* Keep other sections above the track */
         .dashboard-menu-section { z-index: 2; position: relative; }
         .dashboard-menu-overlay { z-index: 3; position: absolute; }
         .dashboard-menu-content { z-index: 4; position: relative; }
 
-        /* small gap so sections are visually separated from banner */
         .dashboard-banner-menu-spacing { height: 12px; }
-
       `}</style>
 
       <div className="banner-slider-track-continuous" ref={trackRef}>
