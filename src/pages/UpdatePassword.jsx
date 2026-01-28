@@ -119,7 +119,7 @@ export default function UpdatePassword() {
         minHeight: "100vh",
         background: "linear-gradient(120deg, #071e2f 0%, #0f2b45 30%, #16384e 60%, #0f4f63 100%)",
         paddingTop: 28,
-        paddingBottom: 80,
+        paddingBottom: 16, // reduced to 20% (was 80)
         color: "#fff",
       }}
     >
@@ -151,18 +151,21 @@ export default function UpdatePassword() {
                 type="password"
                 value={oldPassword}
                 onChange={setOldPassword}
+                placeholder="Enter old password"
               />
               <Input
                 label="New Password"
                 type="password"
                 value={newPassword}
                 onChange={setNewPassword}
+                placeholder="Enter new password"
               />
               <Input
                 label="Confirm New Password"
                 type="password"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
+                placeholder="Confirm new password"
               />
               {errorMsg && (
                 <div className="text-red-500 text-sm" style={{ color: "#ff7b7b", marginTop: 6 }}>{errorMsg}</div>
@@ -173,7 +176,7 @@ export default function UpdatePassword() {
                 style={{
                   background: START_BLUE,
                   color: "#fff",
-                  padding: "0.75rem",
+                  padding: "0.15rem", // reduced to 20% of previous 0.75rem
                   borderRadius: "0.75rem",
                   fontWeight: 700,
                   fontSize: "1rem",
@@ -194,12 +197,13 @@ export default function UpdatePassword() {
   );
 }
 
-function Input({ label, type, value, onChange }) {
+function Input({ label, type, value, onChange, placeholder }) {
   return (
     <div style={{ marginBottom: 12 }}>
       <label className="block mb-1 font-semibold" style={{ color: "#ffffff", marginBottom: 8 }}>{label}</label>
       <input
         type={type}
+        placeholder={placeholder || ""}
         className="w-full border rounded px-3 py-2"
         style={{
           width: "100%",
