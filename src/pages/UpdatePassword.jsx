@@ -116,10 +116,9 @@ export default function UpdatePassword() {
   return (
     <div
       style={{
-        minHeight: "100vh",
         background: "linear-gradient(120deg, #071e2f 0%, #0f2b45 30%, #16384e 60%, #0f4f63 100%)",
         paddingTop: 28,
-        paddingBottom: 16, // reduced to 20% (was 80)
+        paddingBottom: 12, // small space left under form
         color: "#fff",
       }}
     >
@@ -144,7 +143,7 @@ export default function UpdatePassword() {
           />
 
           {/* Form card (visually similar to Bind Wallet style) */}
-          <div style={{ paddingBottom: 24 }}>
+          <div style={{ paddingBottom: 8 }}>
             <form onSubmit={handleSubmit} className="space-y-4" style={{ maxWidth: 720 }}>
               <Input
                 label="Old Password"
@@ -176,7 +175,7 @@ export default function UpdatePassword() {
                 style={{
                   background: START_BLUE,
                   color: "#fff",
-                  padding: "0.15rem", // reduced to 20% of previous 0.75rem
+                  padding: "0.15rem", // small button height preserved from earlier change
                   borderRadius: "0.75rem",
                   fontWeight: 700,
                   fontSize: "1rem",
