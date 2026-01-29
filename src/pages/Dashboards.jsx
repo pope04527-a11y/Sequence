@@ -18,11 +18,10 @@ import { useBalance } from "../context/balanceContext";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 
 /*
-  Final adjustments:
-  - "Transaction History" and "Funds" cards now link to the TransactionHistory page ("/transaction-history").
-  - Kept prior styling and behavior (compact top stat box, 30-day registered days, custom scrollbar, compact section cards).
-  - No backend changes required — this file implements the "2 sets per day for sign-in" logic on the frontend,
-    using the task records available in context. Day boundaries use Europe/London so they align with the server.
+  Adjusted:
+  - Persist sign state in localStorage keyed by username so sign remains visible after page refresh.
+  - Use Europe/London day boundary for "today".
+  - Sign state applies only to that day; the next UK day it will no longer show as signed (you must re-earn 2 sets to sign again).
 */
 
 const vipConfig = {
@@ -34,7 +33,7 @@ const vipConfig = {
 
 const START_BLUE = "#1fb6fc";
 
-// helper: date key — use Europe/London timezone so client day boundaries match server
+// helper: date key — Europe/London timezone so client day boundaries match server expectations
 function toDateKey(d = new Date()) {
   try {
     const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London' }).formatToParts(new Date(d));
@@ -43,7 +42,6 @@ function toDateKey(d = new Date()) {
     const day = parts.find(p => p.type === 'day')?.value;
     return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   } catch (e) {
-    // fallback to local date key if Intl fails
     const dt = new Date(d);
     return `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
   }
@@ -104,49 +102,61 @@ function TopStatBox({ accountBalance, commissionToday, frozenAmount, dataCount, 
   );
 }
 
-/* RegisteredDays: 30 tiles, manual horizontal scroll, custom scrollbar UI (right arrow only) */
+/* RegisteredDays: persists sign state in localStorage per username and resets daily */
 function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
   const REQUIRED_SETS = 2;
-  const userId = (userProfile && (userProfile.username || userProfile.id)) || "guest";
-  const storageKey = `signin_${userId}`;
+  const username = (userProfile && (userProfile.username || userProfile.id)) || "guest";
+  const storageKey = `signin_${username}`;
 
-  // Count completed tasks today (use completedAt when present, and use Europe/London day boundary)
+  // Count completed tasks today using completedAt/preferred completed timestamp and Europe/London day
   const completedTasksToday = useMemo(() => {
     if (!records || !userProfile) return 0;
     const todayKey = toDateKey(new Date());
     let count = 0;
     records.forEach((r) => {
-      // Prefer completion timestamp fields; fall back to created timestamps
-      const created = r.completedAt || r.completed_at || r.createdAt || r.created || r.updatedAt || r.date;
-      if (!created) return;
-      const k = toDateKey(new Date(created));
+      const completedAt = r.completedAt || r.completed_at || r.createdAt || r.created || r.updatedAt || r.date;
+      if (!completedAt) return;
+      const k = toDateKey(new Date(completedAt));
       if (k === todayKey && String(r.status).toLowerCase() === "completed") count += 1;
     });
     return count;
   }, [records, userProfile]);
 
-  // Number of full sets completed today (integer)
   const setsCompletedToday = Math.floor((completedTasksToday || 0) / (maxTasks || 1));
-
-  // displayedSets is capped at REQUIRED_SETS (we show 0/2, 1/2 or 2/2)
   const displayedSets = Math.min(setsCompletedToday, REQUIRED_SETS);
 
-  // local sign state persisted in localStorage per user (no backend changes)
-  const loadSign = () => {
+  // Load sign state from localStorage (persist across refresh). Reset today's flag if lastSignDate !== today.
+  const loadSignState = () => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return { signedCount: 0, lastSignDate: null };
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // normalize
+      return { signedCount: parsed.signedCount || 0, lastSignDate: parsed.lastSignDate || null };
     } catch (e) {
       return { signedCount: 0, lastSignDate: null };
     }
   };
-  const [signState, setSignState] = useState(loadSign);
 
-  // derived: whether user has already signed today (local state)
-  const signedToday = signState.lastSignDate === toDateKey(new Date());
+  const [signState, setSignState] = useState(() => {
+    const st = loadSignState();
+    // If stored lastSignDate is from a previous UK day, do not mark "signed today" — keep the streak but the UI will show unsigned for today
+    // We return stored state; UI derives "signed today" by comparing to current UK date key below
+    return st;
+  });
 
-  // handleSignIn: only allowed when setsCompletedToday >= REQUIRED_SETS
+  // Keep localStorage and state in sync whenever signState changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(signState));
+    } catch (e) {
+      // ignore localStorage write errors
+    }
+  }, [signState, storageKey]);
+
+  const todayKey = toDateKey(new Date());
+  const signedToday = signState.lastSignDate === todayKey;
+
   const handleSignIn = () => {
     if (signedToday) return;
     if (setsCompletedToday < REQUIRED_SETS) {
@@ -157,13 +167,13 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
     let newCount = 1;
     if (signState.lastSignDate === yesterdayKey) {
       newCount = (signState.signedCount || 0) + 1;
-    } else if (signState.lastSignDate === toDateKey(new Date())) {
+    } else if (signState.lastSignDate === todayKey) {
       newCount = signState.signedCount || 1;
     } else {
       newCount = 1;
     }
     if (newCount > 30) newCount = 30;
-    const newState = { signedCount: newCount, lastSignDate: toDateKey(new Date()) };
+    const newState = { signedCount: newCount, lastSignDate: todayKey };
     setSignState(newState);
     try { localStorage.setItem(storageKey, JSON.stringify(newState)); } catch (e) {}
     if (newCount === 5) alert("5-day streak reached — 500 GBP reward!");
@@ -171,7 +181,7 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
     if (newCount === 30) alert("30-day streak reached — 3000 GBP reward!");
   };
 
-  // Build 30-days UI: mark tiles as signed if index <= signedCount
+  // Build 30-days UI tiles
   const days = Array.from({ length: 30 }).map((_, i) => {
     const idx = i + 1;
     const signed = idx <= (signState.signedCount || 0);
@@ -202,12 +212,6 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
   const thumbWidth = Math.max(36, trackWidth * visibleRatio);
   const maxScrollLeft = Math.max(0, scrollInfo.width - scrollInfo.client);
   const thumbLeft = maxScrollLeft > 0 ? (scrollInfo.left / maxScrollLeft) * (trackWidth - thumbWidth) : 0;
-
-  const scrollBy = (delta) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: delta, behavior: "smooth" });
-  };
 
   const onTrackClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -278,7 +282,6 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
               position: "relative",
             }}
           >
-            {/* Use signIcon for the tile image */}
             <img
               src={signIcon}
               alt={`Day ${d.idx}`}
@@ -289,7 +292,6 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
               {`DAY ${d.idx}`}
             </div>
 
-            {/* padlock shown when not signed for that tile */}
             {!d.signed && (
               <div style={{ position: "absolute", left: 6, top: 6 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -308,7 +310,6 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
         ))}
       </div>
 
-      {/* Custom scrollbar UI (only RIGHT arrow remains) */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
         <div
           onClick={onTrackClick}
@@ -368,9 +369,7 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
   );
 }
 
-/* Section component updated to render compact uniform cards for Asset/Profile/History.
-   Styles applied inline so we don't change external stylesheets.
-*/
+/* Section component and rest of Dashboard (unchanged) */
 function Section({ title, items }) {
   return (
     <section className="dashboard-section">
@@ -415,14 +414,12 @@ const assetItems = [
   { icon: withdrawalIcon, title: "Withdrawal", desc: "Cash out your funds", link: "/withdraw" },
 ];
 
-// Transaction History link updated to /transaction-history
 const profileItems = [
   { icon: transactionIcon, title: "Transaction History", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
   { icon: accountIcon, title: "My Account", desc: "Manage your sign in & password details", link: "/profile" },
   { icon: referralIcon, title: "Referral Code", desc: "Get your amazing rewards", link: "/referral" },
 ];
 
-// Funds link updated to /transaction-history
 const historyItems = [
   { icon: ordersIcon, title: "Orders", desc: "Track your orders status", link: "/records" },
   { icon: fundsIcon, title: "Funds", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
@@ -457,7 +454,7 @@ export default function Dashboards() {
 
   const frozenAmount = (userProfile && (userProfile.frozenAmount || userProfile.frozen)) || 0;
 
-  // compute todays completed tasks (original logic — still used to show DATA and as fallback)
+  // compute todays completed tasks (original logic)
   function computeTodaysTasks(recordsList, profile) {
     if (!recordsList || !profile) return 0;
     const currentSet = profile.currentSet ?? 1;
