@@ -419,7 +419,7 @@ const profileItems = [
   { icon: transactionIcon, title: "Transaction History", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
   { icon: accountIcon, title: "My Account", desc: "Manage your sign in & password details", link: "/profile" },
   { icon: referralIcon, title: "Referral Code", desc: "Get your amazing rewards", link: "/referral" },
-);
+];
 
 // Funds link updated to /transaction-history
 const historyItems = [
