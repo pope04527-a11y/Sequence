@@ -1,3 +1,4 @@
+// (full file — removed hard-coded COMBO_TRIGGER_INDEX and the pre-check using it)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
@@ -10,15 +11,11 @@ import startButtonImg from "../assets/images/start/startbutton.png";
 /*
   Tasks.jsx
 
-  Change applied:
-  - Make the top progress line fully green across the page (fill spans 100%).
-  - Use API_BASE (http://localhost:3002 by default).
-  - Send devUsername in the request body (avoids CORS preflight for custom headers).
-  - After a successful task submission we now immediately call refreshProfile()
-    so balance and commission values in the global balance context update right away
-    (no manual page refresh required). We also ensure the overall submission flow
-    completes within a maximum of 3 seconds (falls back early if the backend or
-    profile refresh is slow) so the user can return to tasks quickly.
+  Changes in this version:
+  - Removed the hard-coded COMBO_TRIGGER_INDEX and the local pre-check that tried to predict combos.
+    The client now relies on the server's decision (result.isCombo) after calling /api/start-task.
+  - The rest of the code is preserved; only the pre-start predictive check was removed so client/server
+    do not disagree about when combos should be issued.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -176,8 +173,6 @@ function formatDate(str) {
     .padStart(2, "0")}`;
 }
 
-const COMBO_TRIGGER_INDEX = 15;
-
 export default function Tasks() {
   // preserved state/logic
   const [productGrid, setProductGrid] = useState([]);
@@ -286,16 +281,8 @@ export default function Tasks() {
       return;
     }
 
-    if (todaysTasks + 1 === COMBO_TRIGGER_INDEX) {
-      setOptimizing(false);
-      setShowOptimizingOverlay(false);
-      setShowOptimizingToast(false);
-      showGreyToast("Please submit the previous rating before you proceed.", 1800);
-      setTimeout(() => {
-        navigate("/deposit");
-      }, 1800);
-      return;
-    }
+    // NOTE: Removed local pre-check that predicted combo triggers. We now rely on server response
+    // which is authoritative (server returns result.isCombo when a combo was created).
 
     setOptimizing(true);
     setShowOptimizingOverlay(true);
@@ -345,6 +332,7 @@ export default function Tasks() {
         return;
       }
 
+      // server signals a combo task was created
       if (result && result.isCombo) {
         showGreyToast("Please submit the previous rating before you proceed.", 1800);
         setTimeout(() => {
