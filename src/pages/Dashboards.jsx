@@ -18,10 +18,10 @@ import { useBalance } from "../context/balanceContext";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 
 /*
-  Adjusted:
-  - Persist sign state in localStorage keyed by username so sign remains visible after page refresh.
-  - Use Europe/London day boundary for "today".
-  - Sign state applies only to that day; the next UK day it will no longer show as signed (you must re-earn 2 sets to sign again).
+  Dashboards.jsx — Updated to use server-side registeredWorkingDays and signState.
+  - Uses POST /api/sign-in to persist sign-in on the backend so sign-in state syncs across devices.
+  - Uses Europe/London day boundary for "today" so behaviour is timezone-consistent.
+  - Falls back to computing sets from local task records if server data is absent.
 */
 
 const vipConfig = {
@@ -32,15 +32,16 @@ const vipConfig = {
 };
 
 const START_BLUE = "#1fb6fc";
+const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
 
-// helper: date key — Europe/London timezone so client day boundaries match server expectations
+// helper: date key in Europe/London to match backend
 function toDateKey(d = new Date()) {
   try {
-    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London' }).formatToParts(new Date(d));
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London' }).formatToParts(d);
     const y = parts.find(p => p.type === 'year')?.value;
     const m = parts.find(p => p.type === 'month')?.value;
     const day = parts.find(p => p.type === 'day')?.value;
-    return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   } catch (e) {
     const dt = new Date(d);
     return `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
@@ -102,86 +103,74 @@ function TopStatBox({ accountBalance, commissionToday, frozenAmount, dataCount, 
   );
 }
 
-/* RegisteredDays: persists sign state in localStorage per username and resets daily */
-function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
+/* RegisteredDays: displays server-side working-day info and persists sign-in via backend */
+function RegisteredDays({ records, userProfile, todaysTasks, maxTasks, refreshProfile }) {
   const REQUIRED_SETS = 2;
-  const username = (userProfile && (userProfile.username || userProfile.id)) || "guest";
-  const storageKey = `signin_${username}`;
+  const todayKey = toDateKey(new Date());
 
-  // Count completed tasks today using completedAt/preferred completed timestamp and Europe/London day
-  const completedTasksToday = useMemo(() => {
-    if (!records || !userProfile) return 0;
-    const todayKey = toDateKey(new Date());
-    let count = 0;
-    records.forEach((r) => {
+  // Server-supplied registeredWorkingDays map and signState (if available)
+  const serverRegMap = (userProfile && userProfile.registeredWorkingDays) || {};
+  const registeredSetsToday = serverRegMap[todayKey] || 0;
+
+  // Fallback (client-side) computed completed tasks today based on records if server has no data
+  const completedTasksTodayFallback = useMemo(() => {
+    if (!records) return 0;
+    let cnt = 0;
+    records.forEach(r => {
       const completedAt = r.completedAt || r.completed_at || r.createdAt || r.created || r.updatedAt || r.date;
       if (!completedAt) return;
-      const k = toDateKey(new Date(completedAt));
-      if (k === todayKey && String(r.status).toLowerCase() === "completed") count += 1;
+      if (toDateKey(new Date(completedAt)) === todayKey && String(r.status).toLowerCase() === "completed") cnt += 1;
     });
-    return count;
-  }, [records, userProfile]);
+    return cnt;
+  }, [records, todayKey]);
 
-  const setsCompletedToday = Math.floor((completedTasksToday || 0) / (maxTasks || 1));
+  const setsCompletedToday = registeredSetsToday || Math.floor((completedTasksTodayFallback || 0) / (maxTasks || 1));
   const displayedSets = Math.min(setsCompletedToday, REQUIRED_SETS);
 
-  // Load sign state from localStorage (persist across refresh). Reset today's flag if lastSignDate !== today.
-  const loadSignState = () => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return { signedCount: 0, lastSignDate: null };
-      const parsed = JSON.parse(raw);
-      // normalize
-      return { signedCount: parsed.signedCount || 0, lastSignDate: parsed.lastSignDate || null };
-    } catch (e) {
-      return { signedCount: 0, lastSignDate: null };
-    }
-  };
+  // Sign state authoritative from server when available
+  const serverSignState = (userProfile && userProfile.signState) || { signedCount: 0, lastSignDate: null };
+  const [signState, setSignState] = useState(serverSignState);
 
-  const [signState, setSignState] = useState(() => {
-    const st = loadSignState();
-    // If stored lastSignDate is from a previous UK day, do not mark "signed today" — keep the streak but the UI will show unsigned for today
-    // We return stored state; UI derives "signed today" by comparing to current UK date key below
-    return st;
-  });
-
-  // Keep localStorage and state in sync whenever signState changes
+  // Sync signState from serverProfile whenever userProfile changes
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(signState));
-    } catch (e) {
-      // ignore localStorage write errors
+    if (userProfile && userProfile.signState) {
+      setSignState(userProfile.signState);
     }
-  }, [signState, storageKey]);
+  }, [userProfile]);
 
-  const todayKey = toDateKey(new Date());
   const signedToday = signState.lastSignDate === todayKey;
 
-  const handleSignIn = () => {
+  // Call backend sign-in endpoint to persist sign state across devices
+  const handleSignIn = async () => {
     if (signedToday) return;
     if (setsCompletedToday < REQUIRED_SETS) {
       alert(`You must complete ${REQUIRED_SETS} sets to sign in. Progress: ${displayedSets}/${REQUIRED_SETS}`);
       return;
     }
-    const yesterdayKey = toDateKey(new Date(Date.now() - 86400000));
-    let newCount = 1;
-    if (signState.lastSignDate === yesterdayKey) {
-      newCount = (signState.signedCount || 0) + 1;
-    } else if (signState.lastSignDate === todayKey) {
-      newCount = signState.signedCount || 1;
-    } else {
-      newCount = 1;
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["x-auth-token"] = token;
+      const resp = await fetch(`${API_BASE}/api/sign-in`, { method: "POST", headers, body: JSON.stringify({}) });
+      const body = await resp.json();
+      if (!resp.ok) {
+        alert(body.message || "Sign-in failed");
+        return;
+      }
+      if (body && body.signState) {
+        // update local view and refresh profile to get authoritative registeredWorkingDays
+        setSignState(body.signState);
+        try { await refreshProfile?.(); } catch (e) {}
+      } else {
+        // fallback: refresh profile
+        try { await refreshProfile?.(); } catch (e) {}
+      }
+    } catch (err) {
+      console.error('Sign-in request failed:', err);
+      alert('Sign-in failed (network error). Try again.');
     }
-    if (newCount > 30) newCount = 30;
-    const newState = { signedCount: newCount, lastSignDate: todayKey };
-    setSignState(newState);
-    try { localStorage.setItem(storageKey, JSON.stringify(newState)); } catch (e) {}
-    if (newCount === 5) alert("5-day streak reached — 500 GBP reward!");
-    if (newCount === 15) alert("15-day streak reached — 1500 GBP reward!");
-    if (newCount === 30) alert("30-day streak reached — 3000 GBP reward!");
   };
 
-  // Build 30-days UI tiles
   const days = Array.from({ length: 30 }).map((_, i) => {
     const idx = i + 1;
     const signed = idx <= (signState.signedCount || 0);
@@ -369,7 +358,9 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks }) {
   );
 }
 
-/* Section component and rest of Dashboard (unchanged) */
+/* Section component updated to render compact uniform cards for Asset/Profile/History.
+   Styles applied inline so we don't change external stylesheets.
+*/
 function Section({ title, items }) {
   return (
     <section className="dashboard-section">
@@ -414,12 +405,14 @@ const assetItems = [
   { icon: withdrawalIcon, title: "Withdrawal", desc: "Cash out your funds", link: "/withdraw" },
 ];
 
+// Transaction History link updated to /transaction-history
 const profileItems = [
   { icon: transactionIcon, title: "Transaction History", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
   { icon: accountIcon, title: "My Account", desc: "Manage your sign in & password details", link: "/profile" },
   { icon: referralIcon, title: "Referral Code", desc: "Get your amazing rewards", link: "/referral" },
 ];
 
+// Funds link updated to /transaction-history
 const historyItems = [
   { icon: ordersIcon, title: "Orders", desc: "Track your orders status", link: "/records" },
   { icon: fundsIcon, title: "Funds", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
@@ -454,7 +447,7 @@ export default function Dashboards() {
 
   const frozenAmount = (userProfile && (userProfile.frozenAmount || userProfile.frozen)) || 0;
 
-  // compute todays completed tasks (original logic)
+  // compute todays completed tasks (original logic — still used to show DATA and as fallback)
   function computeTodaysTasks(recordsList, profile) {
     if (!recordsList || !profile) return 0;
     const currentSet = profile.currentSet ?? 1;
@@ -534,6 +527,7 @@ export default function Dashboards() {
           userProfile={userProfile}
           todaysTasks={todaysTasks}
           maxTasks={maxTasks}
+          refreshProfile={refreshProfile}
         />
 
         {/* Asset / Profile / History sections with compact uniform cards */}
