@@ -110,7 +110,13 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks, refreshPr
 
   // Server-supplied registeredWorkingDays map and signState (if available)
   const serverRegMap = (userProfile && userProfile.registeredWorkingDays) || {};
-  const registeredSetsToday = serverRegMap[todayKey] || 0;
+
+  // IMPORTANT FIX:
+  // Use hasOwnProperty to detect presence of today's key on serverRegMap.
+  // If server provided today's entry (even if 0), we must use it. Only fall back to client computation
+  // when server has no key for today.
+  const serverHasToday = Object.prototype.hasOwnProperty.call(serverRegMap, todayKey);
+  const registeredSetsToday = serverHasToday ? serverRegMap[todayKey] : null;
 
   // Fallback (client-side) computed completed tasks today based on records if server has no data
   const completedTasksTodayFallback = useMemo(() => {
@@ -124,7 +130,10 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks, refreshPr
     return cnt;
   }, [records, todayKey]);
 
-  const setsCompletedToday = registeredSetsToday || Math.floor((completedTasksTodayFallback || 0) / (maxTasks || 1));
+  const setsCompletedToday = registeredSetsToday !== null
+    ? registeredSetsToday
+    : Math.floor((completedTasksTodayFallback || 0) / (maxTasks || 1));
+
   const displayedSets = Math.min(setsCompletedToday, REQUIRED_SETS);
 
   // Sign state authoritative from server when available
@@ -410,7 +419,7 @@ const profileItems = [
   { icon: transactionIcon, title: "Transaction History", desc: "Track your recharges, withdrawals & earnings history", link: "/transaction-history" },
   { icon: accountIcon, title: "My Account", desc: "Manage your sign in & password details", link: "/profile" },
   { icon: referralIcon, title: "Referral Code", desc: "Get your amazing rewards", link: "/referral" },
-];
+);
 
 // Funds link updated to /transaction-history
 const historyItems = [
