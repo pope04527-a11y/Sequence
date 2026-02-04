@@ -273,6 +273,144 @@ function ProductPage({ product }) {
   );
 }
 
+/* ---------------------------
+   Inject global layout CSS so the mobile/desktop card styles are available
+   This keeps the change limited to this file as requested.
+   --------------------------- */
+const GLOBAL_CSS = `
+:root{
+  --bg:#07283a;
+  --accent:#0b5c7e;
+  --card-bg:#ffffff;
+  --muted:#8aa1b4;
+  --hero-overlay: rgba(2,28,40,0.45);
+  --page-padding: 18px;
+  --card-radius: 6px;
+  --frame-size: 12px;
+}
+
+/* Page container helper */
+.app-wrapper{
+  max-width:1200px;
+  margin:20px auto;
+  padding: var(--page-padding);
+  box-sizing: border-box;
+}
+
+/* HERO / banner */
+.hero{
+  position:relative;
+  border-radius:12px;
+  overflow:hidden;
+  background-size:cover;
+  background-position:center;
+  margin-bottom:18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: var(--hero-overlay);
+  z-index:0;
+}
+.hero-inner{
+  position:relative;
+  z-index:2;
+  padding:28px;
+  color:#fff;
+}
+.hero .eyebrow{
+  font-size:13px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom:10px;
+  text-transform:capitalize;
+  opacity:0.95;
+}
+.hero h1{
+  margin:0 0 6px 0;
+  font-size:24px;
+  line-height:1.05;
+  font-weight:700;
+  letter-spacing: -0.2px;
+}
+.hero p{
+  margin:0;
+  color: rgba(255,255,255,0.85);
+  font-size:14px;
+}
+
+/* Cards grid wrapper - the outer dark frame area */
+.cards-grid{
+  display:grid;
+  gap:16px;
+  /* Force 2 columns on phones like in your screenshot */
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* Outer dark frame for each card */
+.card-frame{
+  background: var(--accent);
+  padding: var(--frame-size);
+  border-radius:6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* Inner white card content */
+.card{
+  background: var(--card-bg);
+  border-radius:4px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+
+/* image area */
+.card .media{
+  width:100%;
+  aspect-ratio: 16/10;
+  object-fit:cover;
+  background:#f2f4f6;
+}
+
+/* text */
+.card .content{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.card .title{
+  font-weight:700;
+  font-size:13px;
+  color:#0b2d3a;
+  line-height:1.2;
+}
+.card .desc{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.3;
+}
+
+/* Responsive breakpoints */
+@media(min-width:760px){
+  .hero h1{ font-size:28px; }
+  .hero p{ font-size:15px; }
+  .cards-grid{ gap:18px; grid-template-columns: repeat(3, 1fr); }
+}
+@media(min-width:1024px){
+  .cards-grid{ grid-template-columns: repeat(4, 1fr); }
+  .app-wrapper{ padding:28px; }
+}
+
+/* small helper: make sure images inside product pages scale correctly */
+.layout-container img{ max-width:100%; height:auto; display:block; }
+`;
+
+/* ---------------------------
+   Layout component (main export)
+   --------------------------- */
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -282,6 +420,21 @@ export default function Layout() {
   // disable hamburger on auth pages
   const noHamburgerRoutes = ["/login", "/register"];
   const disableMenu = noHamburgerRoutes.includes(location.pathname);
+
+  /* Inject the global CSS once on first render (keeps everything self-contained in this file) */
+  useEffect(() => {
+    try {
+      if (typeof document !== "undefined" && !document.getElementById("global-layout-styles")) {
+        const style = document.createElement("style");
+        style.id = "global-layout-styles";
+        style.setAttribute("data-injected-by", "Layout.jsx");
+        style.appendChild(document.createTextNode(GLOBAL_CSS));
+        document.head.appendChild(style);
+      }
+    } catch (e) {
+      // fail silently - injection is optional
+    }
+  }, []);
 
   /* Global: ensure top of page is visible on navigation (applies to all pages) */
   useEffect(() => {
@@ -411,9 +564,17 @@ export default function Layout() {
       {/* Sidebar */}
       {!disableMenu && <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
 
-      {/* Main: render ProductPage when product path, otherwise Outlet */}
+      {/* Main: render ProductPage when product path, otherwise Outlet.
+          When not on a product page we wrap the app content in .app-wrapper so
+          the global card/hero styles injected above can be used by pages. */}
       <main className="layout-content" style={{ flex: 1 }}>
-        {productId ? <ProductPage product={productToRender} /> : <Outlet />}
+        {productId ? (
+          <ProductPage product={productToRender} />
+        ) : (
+          <div className="app-wrapper">
+            <Outlet />
+          </div>
+        )}
       </main>
 
       {/* CustomerServiceModal mounted at Layout level so it overlays the current page (prevents navigating to a separate /customer-service page).
