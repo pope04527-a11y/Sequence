@@ -14,7 +14,7 @@ export default function App() {
         <BalanceProvider>
           <TaskRecordsProvider>
             <TransactionProvider>
-              <div className="app-shell bg-gray-100">
+              <div className="min-h-screen bg-gray-100">
                 <AppRoutes />
               </div>
             </TransactionProvider>
