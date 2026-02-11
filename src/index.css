@@ -19,3 +19,74 @@ body {
 .btn-secondary {
   @apply bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition;
 }
+
+/* --------------------------
+   Responsive + mobile fixes
+   -------------------------- */
+
+/* Box-sizing reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Prevent iOS from automatically resizing text */
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Fluid base font so rem-based Tailwind scales better on small viewports */
+  font-size: clamp(14px, 1.6vw, 18px);
+}
+
+/* App-shell safe-area padding for iPhones with notches
+   (fallback padding then env() values applied) */
+.app-shell {
+  padding: 1rem; /* fallback for browsers that don't support env() */
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  min-height: 100%;
+}
+
+/* Make images, SVGs and video scale down on small screens */
+img, picture, svg, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Platform / social icons — use scalable sizing (works for <img> or inline SVG) */
+.icon, .platform-icon {
+  width: clamp(1.1rem, 4.2vw, 2rem);
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
+}
+
+/* Ensure tappable elements meet mobile hit-area recommendations */
+button, a, .clickable {
+  min-height: 44px; /* Apple recommended minimum */
+  min-width: 44px;
+  padding: 0.5rem 0.75rem;
+  touch-action: manipulation;
+}
+
+/* Very small screens adjustments */
+@media (max-width: 480px) {
+  :root { --tw-space-x-reverse: 0; }
+  .icon, .platform-icon { width: 1.3rem; }
+}
+
+/* Avoid horizontal overflow on small devices */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Optional: readable text blocks if you use prose containers */
+.prose {
+  max-width: 60ch;
+  line-height: 1.5;
+  margin: 0 auto;
+}
