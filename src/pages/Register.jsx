@@ -190,16 +190,63 @@ export default function Register() {
       <Header />
       {fadeMsg && <FadeMessage message={fadeMsg} />}
       {showSpinner && <SpinnerOverlay />}
-      <main className="login-main-content">
-        <h1 className="login-welcome-title">CREATE AN ACCOUNT</h1>
-        <section className="login-form-section">
-          <h2 className="login-form-title">Your Account</h2>
-          <div className="register-form-desc">
+      {/* Reduced spacing on main and section via inline styles so only this page is affected */}
+      <main
+        className="login-main-content"
+        style={{
+          paddingBottom: 0,
+          marginBottom: 0,
+        }}
+      >
+        <h1
+          className="login-welcome-title"
+          style={{
+            marginBottom: "0.6rem", /* tighten space below title */
+          }}
+        >
+          CREATE AN ACCOUNT
+        </h1>
+        <section
+          className="login-form-section"
+          style={{
+            paddingBottom: "0.5rem",
+            marginBottom: 0,
+          }}
+        >
+          <h2
+            className="login-form-title"
+            style={{
+              marginBottom: "0.4rem",
+            }}
+          >
+            Your Account
+          </h2>
+          <div
+            className="register-form-desc"
+            style={{
+              marginBottom: "0.3rem",
+              paddingBottom: 0,
+              lineHeight: 1.25,
+            }}
+          >
             Create your account to begin your journey with Sequenceopt.
           </div>
-          <form className="login-form" onSubmit={handleRegister}>
-            <div className="register-form-row">
-              <div className="login-input-row">
+          <form
+            className="login-form"
+            onSubmit={handleRegister}
+            style={{
+              paddingBottom: "0.5rem",
+              marginBottom: 0,
+            }}
+          >
+            <div
+              className="register-form-row"
+              style={{ marginBottom: "0.5rem", paddingBottom: 0 }}
+            >
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.4rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Username</label>
                 <input
                   name="username"
@@ -212,7 +259,10 @@ export default function Register() {
                   autoComplete="username"
                 />
               </div>
-              <div className="login-input-row">
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.4rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Phone</label>
                 <input
                   name="phone"
@@ -226,8 +276,15 @@ export default function Register() {
                 />
               </div>
             </div>
-            <div className="register-form-row">
-              <div className="login-input-row">
+
+            <div
+              className="register-form-row"
+              style={{ marginBottom: "0.5rem", paddingBottom: 0 }}
+            >
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.4rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Password</label>
                 <input
                   name="password"
@@ -240,7 +297,10 @@ export default function Register() {
                   autoComplete="new-password"
                 />
               </div>
-              <div className="login-input-row">
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.4rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Confirm Password</label>
                 <input
                   name="confirmPassword"
@@ -254,8 +314,15 @@ export default function Register() {
                 />
               </div>
             </div>
-            <div className="register-form-row">
-              <div className="login-input-row">
+
+            <div
+              className="register-form-row"
+              style={{ marginBottom: "0.4rem", paddingBottom: 0 }}
+            >
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.35rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Withdrawal Password</label>
                 <input
                   name="withdrawalPassword"
@@ -268,7 +335,10 @@ export default function Register() {
                   autoComplete="new-password"
                 />
               </div>
-              <div className="login-input-row">
+              <div
+                className="login-input-row"
+                style={{ marginBottom: "0.35rem", paddingBottom: 0 }}
+              >
                 <label className="login-label">Invite Code</label>
                 <input
                   name="inviteCode"
@@ -282,7 +352,11 @@ export default function Register() {
                 />
               </div>
             </div>
-            <div className="register-checkbox-row">
+
+            <div
+              className="register-checkbox-row"
+              style={{ marginBottom: "0.5rem", paddingBottom: 0 }}
+            >
               <input
                 type="checkbox"
                 className="register-checkbox"
@@ -304,10 +378,19 @@ export default function Register() {
                 </button>
               </label>
             </div>
-            <button type="submit" className="login-btn">
+
+            <button
+              type="submit"
+              className="login-btn"
+              style={{ marginBottom: "0.5rem" }}
+            >
               SIGN UP
             </button>
-            <div className="login-bottom-link">
+
+            <div
+              className="login-bottom-link"
+              style={{ marginTop: "0.3rem", marginBottom: "0.25rem" }}
+            >
               <span>Already have an account?</span> <Link to="/login" className="login-link">Sign in here</Link>
             </div>
           </form>
@@ -317,8 +400,19 @@ export default function Register() {
       {/* Render shared Footer but disable all clickable elements on the register page
           except the floating chat button. Also allow interaction for the customer service modal
           rendered inside the Footer by enabling pointer-events for [role="dialog"] so modal buttons
-          are clickable and don't fall through to the page beneath. */}
-      <div className="login-footer-wrapper">
+          are clickable and don't fall through to the page beneath.
+          
+          NOTE: added extra CSS rules scoped under .login-footer-wrapper to collapse the large
+          footer block on the register page while keeping the small bottom bar and the floating
+          chat button/modal accessible. This avoids editing the shared Footer component.
+      */}
+      <div
+        className="login-footer-wrapper"
+        style={{
+          /* keep wrapper visible so footer elements that must show (chat button / copyright strip) remain */
+          overflow: "visible",
+        }}
+      >
         <style>
           {`
             /* disable all interactions within the footer on the register page */
@@ -346,6 +440,43 @@ export default function Register() {
             }
             .login-footer-wrapper .footer [role="dialog"] {
               z-index: 10002;
+            }
+
+            /* ---------- Page-specific footer visual collapse ----------
+               Hide the large mid/top parts of the footer on this page so the register
+               card sits directly above the compact footer strip. We keep the bottom
+               copyright/strip and the chat button/modal visible. */
+
+            /* try to hide common footer sections by name (safe to use !important so it's page-scoped) */
+            .login-footer-wrapper .footer .footer-top,
+            .login-footer-wrapper .footer .footer-main,
+            .login-footer-wrapper .footer .footer-content,
+            .login-footer-wrapper .footer .footer-middle,
+            .login-footer-wrapper .footer .footer-hero,
+            .login-footer-wrapper .footer .footer-columns {
+              display: none !important;
+            }
+
+            /* reduce padding and margins so the remaining footer strip is compact */
+            .login-footer-wrapper .footer {
+              padding-top: 0 !important;
+              padding-bottom: 8px !important;
+              margin: 0 !important;
+              background: transparent !important;
+            }
+
+            /* ensure bottom copyright/stripe is visible (common class names) */
+            .login-footer-wrapper .footer .footer-bottom,
+            .login-footer-wrapper .footer .footer-bar,
+            .login-footer-wrapper .footer .footer-copyright {
+              display: block !important;
+              pointer-events: auto !important; /* allow clicking links in the small bottom area if present */
+            }
+
+            /* safety: if footer uses generic sections, collapse any child that is tall */
+            .login-footer-wrapper .footer > * {
+              max-height: 160px;
+              overflow: hidden;
             }
           `}
         </style>
