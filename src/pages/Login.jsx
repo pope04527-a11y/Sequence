@@ -109,63 +109,76 @@ export default function Login({ refreshRecords }) {
   const [showSpinner, setShowSpinner] = useState(false);
   const navigate = useNavigate();
 
-  // Wrap global fetch once so all subsequent fetch() calls send the token automatically.
-  // This avoids changing other files. We only wrap once.
-  const ensureFetchAuthed = () => {
+  // helper: fetch profile and other user data immediately after login
+  async function fetchAndCacheUserData(token) {
+    if (!token) return null;
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    };
+
     try {
-      if (typeof window === "undefined") return;
-      if (window.__fetchWrappedForAuth) return;
-      const originalFetch = window.fetch.bind(window);
-      window.fetch = async (input, init = {}) => {
+      // Fetch the main profile; other endpoints may depend on it
+      const profileReq = fetch(`${API_URL}/api/user-profile`, { method: "GET", headers });
+      // Optional: other data you might want eagerly: task-records, transactions
+      const tasksReq = fetch(`${API_URL}/api/task-records`, { method: "GET", headers });
+      const txReq = fetch(`${API_URL}/api/transactions`, { method: "GET", headers });
+
+      // Run in parallel and ignore failures for non-critical endpoints
+      const [profileRes, tasksRes, txRes] = await Promise.allSettled([profileReq, tasksReq, txReq]);
+
+      let profile = null;
+      if (profileRes.status === "fulfilled" && profileRes.value.ok) {
         try {
-          init = init || {};
-          init.headers = init.headers || {};
-          // normalize Headers object
-          const headersObj = (init.headers instanceof Headers) ? Object.fromEntries(init.headers.entries()) : init.headers;
-
-          // do not overwrite if Authorization already provided
-          if (!headersObj["Authorization"] && !headersObj["authorization"]) {
-            const token = localStorage.getItem("authToken") || localStorage.getItem("token") || "";
-            if (token) {
-              // attach both Authorization and x-auth-token for compatibility
-              init.headers = {
-                ...headersObj,
-                Authorization: `Bearer ${token}`,
-                "x-auth-token": token,
-                "Content-Type": headersObj["Content-Type"] || headersObj["content-type"] || "application/json"
-              };
-            } else {
-              init.headers = {
-                ...headersObj
-              };
-            }
-          } else {
-            init.headers = headersObj;
+          const json = await profileRes.value.json();
+          if (json && json.success && json.user) {
+            profile = json.user;
+            // Save main canonical user profile in localStorage
+            localStorage.setItem("currentUser", JSON.stringify(profile));
+            localStorage.setItem("user", profile.username || "");
+            // Also keep token keys for compatibility across the app
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("token", token);
           }
-        } catch (err) {
-          // if anything fails, continue with original init
+        } catch (e) {
+          // ignore parse errors
+          console.warn("Failed to parse profile response:", e);
         }
-        return originalFetch(input, init);
-      };
-      window.__fetchWrappedForAuth = true;
-
-      // If axios is present globally, set defaults as well (many apps use axios)
-      try {
-        if (window.axios && window.axios.defaults && !window.__axiosAuthSet) {
-          const token = localStorage.getItem("authToken") || localStorage.getItem("token") || "";
-          if (token) {
-            window.axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-            window.axios.defaults.headers.common["x-auth-token"] = token;
-          }
-          window.__axiosAuthSet = true;
-        }
-      } catch (e) {
-        // ignore
       }
+
+      // tasks
+      if (tasksRes.status === "fulfilled" && tasksRes.value.ok) {
+        try {
+          const json = await tasksRes.value.json();
+          if (json && json.success && json.records) {
+            localStorage.setItem("taskRecords", JSON.stringify(json.records));
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      // transactions
+      if (txReq && txRes.status === "fulfilled" && txRes.value.ok) {
+        try {
+          const json = await txRes.value.json();
+          if (json && json.success) {
+            localStorage.setItem("transactions", JSON.stringify({ deposits: json.deposits, withdrawals: json.withdrawals }));
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      // notify other parts of the app
+      if (profile) {
+        try {
+          window.dispatchEvent(new CustomEvent('userProfileLoaded', { detail: profile }));
+        } catch (e) { /* ignore */ }
+      }
+
+      return profile;
     } catch (err) {
-      // ignore
+      console.warn("fetchAndCacheUserData error:", err);
+      return null;
     }
-  };
+  }
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -183,40 +196,32 @@ export default function Login({ refreshRecords }) {
       const data = await res.json();
 
       if (data.success) {
-        // New backend returns token in data.token and also includes it in data.user.token for compatibility.
-        const token = (data && (data.token || (data.user && data.user.token))) || "";
+        // token can be returned either as data.token or data.user.token
+        const token = data.token || (data.user && data.user.token) || (data.user && data.user?.token);
 
-        // Persist user info and token for other modules that rely on localStorage keys
+        // Save initial user object & token quickly so other sync code can read them
         if (data.user) {
-          try {
-            localStorage.setItem("currentUser", JSON.stringify(data.user));
-            if (data.user.username) localStorage.setItem("user", data.user.username);
-          } catch (e) {
-            // ignore storage errors
-          }
+          // store the raw user returned by login (may be partial)
+          localStorage.setItem("currentUser", JSON.stringify(data.user));
+          localStorage.setItem("user", data.user.username || "");
         }
-
         if (token) {
-          // store token under multiple keys for compatibility with existing code
-          try {
-            localStorage.setItem("authToken", token);
-            localStorage.setItem("token", token);
-            // also set a non-httpOnly cookie so server cookie-checking fallback works (verifyUserToken looks in cookies)
-            // cookie valid for 30 days
-            const maxAge = 60 * 60 * 24 * 30;
-            document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${maxAge};`;
-          } catch (e) {
-            // ignore
-          }
-
-          // ensure global fetch/axios will include token for subsequent requests without changing other files
-          ensureFetchAuthed();
+          localStorage.setItem("authToken", token);
+          localStorage.setItem("token", token);
         }
 
         setFadeMsg("Login Success");
+
+        // Immediately fetch full user profile and other data before navigation,
+        // so subsequent pages can read data from localStorage / receive the event.
+        await fetchAndCacheUserData(token);
+
+        // call parent refresh hook if provided
         if (typeof refreshRecords === "function") {
-          try { refreshRecords(); } catch (e) { /* ignore */ }
+          try { refreshRecords(); } catch (e) { console.warn('refreshRecords failed', e); }
         }
+
+        // show spinner then navigate
       } else {
         setFadeMsg(data.message || "Login failed!");
       }
@@ -249,11 +254,6 @@ export default function Login({ refreshRecords }) {
       return () => clearTimeout(timer);
     }
   }, [showSpinner, navigate]);
-
-  // On component mount, ensure fetch/axios pick up any token already in localStorage (e.g., page reload)
-  React.useEffect(() => {
-    ensureFetchAuthed();
-  }, []);
 
   return (
     <div className="login-bg-hero">
