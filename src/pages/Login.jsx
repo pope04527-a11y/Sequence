@@ -109,6 +109,64 @@ export default function Login({ refreshRecords }) {
   const [showSpinner, setShowSpinner] = useState(false);
   const navigate = useNavigate();
 
+  // Wrap global fetch once so all subsequent fetch() calls send the token automatically.
+  // This avoids changing other files. We only wrap once.
+  const ensureFetchAuthed = () => {
+    try {
+      if (typeof window === "undefined") return;
+      if (window.__fetchWrappedForAuth) return;
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async (input, init = {}) => {
+        try {
+          init = init || {};
+          init.headers = init.headers || {};
+          // normalize Headers object
+          const headersObj = (init.headers instanceof Headers) ? Object.fromEntries(init.headers.entries()) : init.headers;
+
+          // do not overwrite if Authorization already provided
+          if (!headersObj["Authorization"] && !headersObj["authorization"]) {
+            const token = localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+            if (token) {
+              // attach both Authorization and x-auth-token for compatibility
+              init.headers = {
+                ...headersObj,
+                Authorization: `Bearer ${token}`,
+                "x-auth-token": token,
+                "Content-Type": headersObj["Content-Type"] || headersObj["content-type"] || "application/json"
+              };
+            } else {
+              init.headers = {
+                ...headersObj
+              };
+            }
+          } else {
+            init.headers = headersObj;
+          }
+        } catch (err) {
+          // if anything fails, continue with original init
+        }
+        return originalFetch(input, init);
+      };
+      window.__fetchWrappedForAuth = true;
+
+      // If axios is present globally, set defaults as well (many apps use axios)
+      try {
+        if (window.axios && window.axios.defaults && !window.__axiosAuthSet) {
+          const token = localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+          if (token) {
+            window.axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            window.axios.defaults.headers.common["x-auth-token"] = token;
+          }
+          window.__axiosAuthSet = true;
+        }
+      } catch (e) {
+        // ignore
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -125,15 +183,39 @@ export default function Login({ refreshRecords }) {
       const data = await res.json();
 
       if (data.success) {
-        // Store user information and token under the key 'token' so other parts of the app
-        // (e.g. Tasks.jsx) can read it consistently.
-        localStorage.setItem("currentUser", JSON.stringify(data.user));
-        localStorage.setItem("user", data.user.username);
-        localStorage.setItem("authToken", data.user.token);
-        localStorage.setItem("token", data.user.token); // ensure compatibility with other modules
+        // New backend returns token in data.token and also includes it in data.user.token for compatibility.
+        const token = (data && (data.token || (data.user && data.user.token))) || "";
+
+        // Persist user info and token for other modules that rely on localStorage keys
+        if (data.user) {
+          try {
+            localStorage.setItem("currentUser", JSON.stringify(data.user));
+            if (data.user.username) localStorage.setItem("user", data.user.username);
+          } catch (e) {
+            // ignore storage errors
+          }
+        }
+
+        if (token) {
+          // store token under multiple keys for compatibility with existing code
+          try {
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("token", token);
+            // also set a non-httpOnly cookie so server cookie-checking fallback works (verifyUserToken looks in cookies)
+            // cookie valid for 30 days
+            const maxAge = 60 * 60 * 24 * 30;
+            document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${maxAge};`;
+          } catch (e) {
+            // ignore
+          }
+
+          // ensure global fetch/axios will include token for subsequent requests without changing other files
+          ensureFetchAuthed();
+        }
+
         setFadeMsg("Login Success");
         if (typeof refreshRecords === "function") {
-          refreshRecords();
+          try { refreshRecords(); } catch (e) { /* ignore */ }
         }
       } else {
         setFadeMsg(data.message || "Login failed!");
@@ -167,6 +249,11 @@ export default function Login({ refreshRecords }) {
       return () => clearTimeout(timer);
     }
   }, [showSpinner, navigate]);
+
+  // On component mount, ensure fetch/axios pick up any token already in localStorage (e.g., page reload)
+  React.useEffect(() => {
+    ensureFetchAuthed();
+  }, []);
 
   return (
     <div className="login-bg-hero">
