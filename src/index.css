@@ -90,3 +90,53 @@ html, body {
   line-height: 1.5;
   margin: 0 auto;
 }
+/* --- Layout fix: app-shell as column flex so footer follows content --- */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* allow footer at bottom of viewport when content short */
+}
+
+/* The immediate content wrapper (the div that contains AppRoutes) should grow */
+.app-shell > div {
+  flex: 1 0 auto; /* grow to fill available space, but don't force extra height */
+  min-height: 0;  /* important for children to be able to scroll (prevents content overflow bugs) */
+}
+
+/* If your app uses a footer element or .footer class, make sure it doesn't get large top margin */
+footer, .footer {
+  margin-top: 0;
+  /* If you want footer to always sit flush after content, remove large padding/margin */
+}
+
+/* --- Reduce large card/section bottom spacing on smaller screens ---
+   These are generic selectors to catch common Tailwind component names.
+   If your register component has a specific class (e.g. .register-card) add it here. */
+@media (max-width: 768px) {
+  /* Reduce overly large vertical padding on cards and hero sections */
+  .card, .auth-card, .register-card, .section, .hero {
+    padding-bottom: 1rem; /* reduce bottom padding */
+    margin-bottom: 0;     /* remove extra bottom margin */
+  }
+
+  /* Slightly tighten the inner spacing of form containers so fields don't stretch vertically */
+  .card .card-body, .auth-card .card-body, .register-card .card-body, form {
+    padding-bottom: 0.75rem;
+  }
+
+  /* Make sure the CTA area isn't creating extra gap */
+  .card .card-footer, .auth-card .card-footer, form .form-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+}
+
+/* --- Avoid accidental big bottom spacers caused by empty elements --- */
+.app-shell *:empty {
+  display: none;
+}
+
+/* --- Prevent horizontal overflow that can make page appear taller on mobile --- */
+html, body {
+  overflow-x: hidden;
+}
