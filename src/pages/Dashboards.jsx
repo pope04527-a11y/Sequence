@@ -22,6 +22,8 @@ import { useTaskRecords } from "../context/TaskRecordsContext";
   - Uses POST /api/sign-in to persist sign-in on the backend so sign-in state syncs across devices.
   - Uses Europe/London day boundary for "today" so behaviour is timezone-consistent.
   - Falls back to computing sets from local task records if server data is absent.
+  - Listens for the global 'userProfileLoaded' event and storage changes so that after login
+    the dashboard refreshes its profile and task-records immediately (no manual page refresh).
 */
 
 const vipConfig = {
@@ -430,7 +432,7 @@ const historyItems = [
 
 export default function Dashboards() {
   const { balance, commissionToday, vipLevel, refreshProfile, userProfile } = useBalance();
-  const { records } = useTaskRecords();
+  const { records, fetchTaskRecords } = useTaskRecords();
 
   // display name
   const displayName =
@@ -495,10 +497,54 @@ export default function Dashboards() {
   const todaysTasks = computeTodaysTasks(records || [], userProfile || {});
   const maxTasks = (userProfile && userProfile.maxTasks) || vipConfig[Number(vipLevel)]?.taskLimit || 40;
 
-  // refresh profile on mount
+  // refresh profile & task-records on mount
   useEffect(() => {
-    refreshProfile && refreshProfile();
-  }, [refreshProfile]);
+    if (typeof refreshProfile === "function") {
+      refreshProfile().catch(() => {});
+    }
+    if (typeof fetchTaskRecords === "function") {
+      fetchTaskRecords().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Listen for login events and storage updates so dashboard refreshes immediately after login
+  useEffect(() => {
+    const onUserProfileLoaded = async (e) => {
+      // refresh in-memory profile and task records when login completes (Login.jsx dispatches this)
+      try {
+        if (typeof refreshProfile === "function") await refreshProfile();
+      } catch (err) {
+        // ignore
+      }
+      try {
+        if (typeof fetchTaskRecords === "function") await fetchTaskRecords();
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    // storage event in case login just wrote token/currentUser
+    const onStorage = async (ev) => {
+      if (!ev) return;
+      if (ev.key === "token" || ev.key === "authToken" || ev.key === "currentUser") {
+        try {
+          if (typeof refreshProfile === "function") await refreshProfile();
+        } catch (err) {}
+        try {
+          if (typeof fetchTaskRecords === "function") await fetchTaskRecords();
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener("userProfileLoaded", onUserProfileLoaded);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("userProfileLoaded", onUserProfileLoaded);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [refreshProfile, fetchTaskRecords]);
 
   return (
     <main className="dashboard-main-bg">
