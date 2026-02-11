@@ -46,9 +46,10 @@
 }
 
 /* --- Main Register Content --- */
+/* Reduced outer spacing so the register card sits closer to the header and footer */
 .login-main-content {
   max-width: 800px;
-  margin: 38px auto 32px auto;
+  margin: 18px auto 12px auto; /* tightened top/bottom spacing */
   position: relative;
   z-index: 2;
   padding: 0 16px;
@@ -58,7 +59,7 @@
   font-weight: 700;
   text-align: left;
   letter-spacing: 1px;
-  margin-bottom: 30px;
+  margin-bottom: 12px; /* reduced from 30px */
   color: #fff;
   text-shadow: 0 2px 12px #0c2742a0;
 }
@@ -66,13 +67,14 @@
   background: rgba(12, 24, 44, 0.94);
   border-radius: 16px;
   box-shadow: 0 2px 32px 0 #0005;
-  padding: 38px 35px 18px 35px;
+  /* reduced overall padding so the inner card is more compact */
+  padding: 20px 20px 12px 20px; /* was 38px 35px 18px 35px */
   border: 1.5px solid rgba(7,30,61,0.16);
 }
 .login-form-title {
   font-size: 1.18rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px; /* tightened */
   color: #fff;
   letter-spacing: 0.5px;
 }
@@ -80,7 +82,8 @@
 .register-form-desc {
   font-size: 1.03rem;
   color: #b9d4e4;
-  margin-bottom: 24px;
+  margin-bottom: 12px; /* reduced from 24px */
+  line-height: 1.25;
 }
 
 /* --- Form --- */
@@ -89,13 +92,14 @@
 }
 .register-form-row {
   display: flex;
-  gap: 24px;
-  margin-bottom: 18px;
+  gap: 16px; /* reduced gap */
+  margin-bottom: 12px; /* reduced from 18px */
 }
 .login-input-row {
   flex: 1;
   display: flex;
   flex-direction: column;
+  margin-bottom: 0; /* ensure no extra gap */
 }
 .login-label {
   font-size: 1.07rem;
@@ -106,23 +110,38 @@
 .login-input {
   border-radius: 7px;
   border: none;
-  padding: 13px 16px;
+  padding: 11px 14px; /* slightly reduced padding */
   font-size: 1.07rem;
   background: #fff;
   color: #222;
   font-weight: 500;
   outline: none;
-  margin-bottom: 0;
+  margin-bottom: 6px; /* keep small spacing between stacked inputs */
   transition: box-shadow 0.17s;
   box-shadow: 0 2px 8px rgba(60,130,244,0.09);
 }
 .login-input:focus {
   box-shadow: 0 0 0 2px #278ea5;
 }
+
+/* Some pages/components create empty elements or large height placeholders.
+   Ensure input rows do not contain unexpected empty blocks by collapsing empty children. */
+.login-input-row > *:empty {
+  display: none;
+  line-height: 0;
+  height: 0;
+}
+
+/* If inputs are stacked (mobile) ensure no large blank bars appear */
+.register-form-row + .register-form-row {
+  margin-top: 0;
+}
+
+/* Reduce vertical spacing before and after complex controls */
 .register-checkbox-row {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px; /* slightly reduced from 16px */
   margin-top: 2px;
 }
 .register-checkbox {
@@ -144,7 +163,7 @@
   font-size: 1.07rem;
   border: none;
   border-radius: 8px;
-  padding: 13px 0;
+  padding: 11px 0; /* slightly reduced vertical padding */
   margin-top: 4px;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(39,142,165,0.14);
@@ -157,7 +176,7 @@
   box-shadow: 0 4px 16px rgba(33,230,193,0.14);
 }
 .login-bottom-link {
-  margin-top: 16px;
+  margin-top: 12px; /* tightened */
   text-align: left;
   font-size: 1.01rem;
   color: #fff;
@@ -208,6 +227,10 @@
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* --- Footer --- */
+/* Keep the shared footer styling but add a page-scoped compact view for the register page.
+   This collapses the larger footer middle content only when the footer is wrapped by
+   an element with .login-footer-wrapper (Register.jsx uses this wrapper).
+   This approach avoids changing the shared Footer component. */
 .footer {
   background: #181a1f;
   color: #fff;
@@ -299,13 +322,65 @@
   filter: invert(1);
 }
 
+/* --- Page-scoped compact footer (applies only when footer is inside .login-footer-wrapper) --- */
+.login-footer-wrapper .footer .footer-main,
+.login-footer-wrapper .footer .footer-top,
+.login-footer-wrapper .footer .footer-content,
+.login-footer-wrapper .footer .footer-middle,
+.login-footer-wrapper .footer .footer-columns,
+.login-footer-wrapper .footer .footer-hero {
+  display: none !important; /* hide the large mid sections for a compact footer on register page */
+}
+
+/* Keep bottom strip visible and compact */
+.login-footer-wrapper .footer {
+  padding-top: 6px !important;
+  padding-bottom: 10px !important;
+  margin: 0 !important;
+  background: #141416 !important;
+}
+.login-footer-wrapper .footer .footer-bottom,
+.login-footer-wrapper .footer .footer-bar,
+.login-footer-wrapper .footer .footer-copyright,
+.login-footer-wrapper .footer .footer-copyright-row {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto !important;
+  color: #b7c0d0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Ensure the floating chat button and any modal remain interactive and visible */
+.login-footer-wrapper .footer .footer-chat-btn,
+.login-footer-wrapper .footer .footer-chat-btn * {
+  pointer-events: auto !important;
+  cursor: pointer;
+  z-index: 10001;
+}
+
+/* Safety clamp so any unexpectedly tall children inside the footer wrapper don't push layout */
+.login-footer-wrapper .footer > * {
+  max-height: 140px;
+  overflow: hidden;
+}
+
 /* --- Responsive --- */
 @media (max-width: 1000px) {
-  .login-main-content { max-width: 99vw; padding: 0 2vw; }
-  .login-form-section { padding: 16px 6px 10px 6px; }
+  .login-main-content { max-width: 99vw; padding: 0 2vw; margin: 14px auto 10px auto; }
+  .login-form-section { padding: 14px 8px 10px 8px; } /* keep mobile card compact */
   .footer-main { padding: 0 2vw; }
   .footer-links-row { flex-direction: column; gap: 16px; }
 }
 @media (max-width: 700px) {
-  .register-form-row { flex-direction: column; gap: 0; }
+  .register-form-row { flex-direction: column; gap: 10px; }
+  .login-welcome-title { font-size: 1.8rem; }
+  .login-form-title { font-size: 1.02rem; }
+  .login-btn { width: 120px; }
+}
+
+/* final safety: prevent horizontal overflow that can create weird vertical scrollbars */
+html, body {
+  overflow-x: hidden;
 }
