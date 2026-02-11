@@ -1,4 +1,19 @@
-/* --- Page background, identical to login --- */
+/* Make the page a column flex so footer sits right after content */
+.login-bg-hero {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* keep full-viewport background */
+}
+
+/* Let the main content take natural height (no forced full-screen) */
+.login-main-content {
+  flex: 0 0 auto; /* content sizes to its intrinsic height */
+}
+
+/* Ensure footer wrapper is pushed to bottom when page is short */
+.login-footer-wrapper {
+  margin-top: auto;
+}/* --- Page background, identical to login --- */
 .login-bg-hero {
   min-height: 100vh;
   background: linear-gradient(135deg, #071e3d 0%, #1f4287 40%, #278ea5 85%, #21e6c1 100%);
