@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "../context/profileContext";
 import CustomerServiceModal from "../components/CustomerServiceModal";
@@ -10,14 +10,19 @@ import notifIcon from "../assets/images/profile/notif.png";
 // Notification bell component
 import NotificationBell from "../components/NotificationBell";
 
-// ---- Updated: this Profile page no longer reads from localStorage synchronously.
-// Instead it always fetches the authoritative profile on mount and when relevant events occur,
-// so a previously cached user's data will not be shown to the current logged-in user. ----
+// Import the update pages so clicking Edit navigates to the actual pages
+// (these files already exist in your src/pages folder)
+import UpdatePassword from "./UpdatePassword.jsx";
+import UpdateWithdrawPassword from "./UpdateWithdrawPassword.jsx";
 
+// ---- Updated: Use your custom API domain ----
 const API_URL = "https://stacksapp-backend-main.onrender.com";
+
+// --- Consistent blue (from start button etc.) ---
 const START_BLUE = "#1fb6fc";
 const END_BLUE = "#0072ff";
 
+// --- Grey fading message overlay (kept for compatibility) ---
 function GreyFadeMessage({ message, duration = 1000, onDone }) {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -71,6 +76,7 @@ function GreyFadeMessage({ message, duration = 1000, onDone }) {
   );
 }
 
+// --- Logout Modal with grey fade message after confirm ---
 function LogoutModal({ open, onClose, onLogout }) {
   if (!open) return null;
   return (
@@ -131,6 +137,7 @@ function LogoutModal({ open, onClose, onLogout }) {
   );
 }
 
+// Centered Withdrawal Password Modal for Profile page
 function WithdrawPasswordModalProfile({
   open,
   onClose,
@@ -212,13 +219,18 @@ function WithdrawPasswordModalProfile({
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { profile: contextProfile, fetchProfile } = useProfile();
+  const { profile, fetchProfile } = useProfile();
 
-  // NO localStorage fallback here — we intentionally avoid showing any cached previous user.
-  // The page will always show the authoritative profile fetched on mount (or an error message)
-  // so that a different previously-logged-in user's data does not flash.
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // We no longer block rendering with a spinner.
+  // Use localProfile so the page can render immediately from localStorage and update quickly when context profile arrives.
+  const [localProfile, setLocalProfile] = useState(() => {
+    try {
+      const stored = localStorage.getItem("currentUser");
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [withdrawPassword, setWithdrawPassword] = useState("");
@@ -227,62 +239,30 @@ export default function Profile() {
   const [submitting, setSubmitting] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
 
+  // --- Logout modal and fading message ---
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [fadeMsg, setFadeMsg] = useState("");
 
-  // Fetch authoritative profile on mount and whenever a 'profile:refresh' or 'balance:changed' event fires.
-  const loadProfileNow = useCallback(async (timeoutMs = 4000) => {
-    setLoading(true);
-    try {
-      // fetchProfile is provided by the ProfileProvider and will use the current auth token
-      const user = await fetchProfile(null, timeoutMs);
-      setProfile(user || null);
-    } catch (e) {
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchProfile]);
-
+  // On mount, fetch profile but don't block UI rendering.
   useEffect(() => {
-    let mounted = true;
-    // Always fetch fresh profile on mount (do not rely on previously cached user)
-    (async () => {
-      await loadProfileNow(4000);
-    })();
+    // fire-and-forget; update localProfile when profile from context arrives
+    fetchProfile && fetchProfile().catch(() => {});
+    // eslint-disable-next-line
+  }, []);
 
-    function onProfileUpdated(e) {
-      if (!mounted) return;
-      if (e?.detail) setProfile(e.detail);
-      else loadProfileNow().catch(() => {});
+  // When context profile updates, keep local cache and persist
+  useEffect(() => {
+    if (profile) {
+      try {
+        localStorage.setItem("currentUser", JSON.stringify(profile));
+      } catch (e) {
+        // ignore
+      }
+      setLocalProfile(profile);
     }
-    function onBalanceChanged() {
-      if (!mounted) return;
-      // quick refresh (debounced by provider)
-      loadProfileNow().catch(() => {});
-    }
-    function onProfileRefresh() {
-      if (!mounted) return;
-      loadProfileNow().catch(() => {});
-    }
+  }, [profile]);
 
-    window.addEventListener("profile:updated", onProfileUpdated);
-    window.addEventListener("balance:changed", onBalanceChanged);
-    window.addEventListener("profile:refresh", onProfileRefresh);
-
-    // also refresh when tab regains focus
-    window.addEventListener("focus", onProfileRefresh);
-
-    return () => {
-      mounted = false;
-      window.removeEventListener("profile:updated", onProfileUpdated);
-      window.removeEventListener("balance:changed", onBalanceChanged);
-      window.removeEventListener("profile:refresh", onProfileRefresh);
-      window.removeEventListener("focus", onProfileRefresh);
-    };
-  }, [loadProfileNow]);
-
-  // Handle protected route navigation (withdraw etc.)
+  // Centralized handler for all protected routes
   const handleProtectedRoute = (targetPath) => {
     setDestination(targetPath);
     setWithdrawPassword("");
@@ -290,6 +270,7 @@ export default function Profile() {
     setShowModal(true);
   };
 
+  // Validate withdrawal password with backend
   const handleSubmitPassword = async () => {
     setErrorMsg("");
     setSubmitting(true);
@@ -300,7 +281,6 @@ export default function Profile() {
         headers: {
           "Content-Type": "application/json",
           "X-Auth-Token": token,
-          Authorization: token ? `Bearer ${token}` : undefined,
         },
         body: JSON.stringify({ password: withdrawPassword }),
       });
@@ -308,9 +288,12 @@ export default function Profile() {
       setSubmitting(false);
       if (data.success) {
         setShowModal(false);
-        // Refresh authoritative profile then navigate
-        await loadProfileNow();
-        if (destination) navigate(destination);
+        fetchProfile && fetchProfile().finally(() => {
+          // Navigate to destination if set
+          if (destination) {
+            navigate(destination);
+          }
+        });
       } else {
         setErrorMsg(data.message || "Incorrect withdrawal password.");
       }
@@ -320,55 +303,28 @@ export default function Profile() {
     }
   };
 
+  // --- Logout logic with fading message and redirect ---
   const handleLogout = () => {
     setShowLogoutModal(false);
     setFadeMsg("Logout Success");
     setTimeout(() => {
       setFadeMsg("");
-      // Clear tokens and profile from storage so next user won't see stale data
-      try {
-        localStorage.removeItem("currentUser");
-        localStorage.removeItem("user");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("token");
-        localStorage.removeItem("userProfile");
-        localStorage.removeItem("profileFetchedAt");
-      } catch (e) {}
-      // notify other parts
-      try { window.dispatchEvent(new Event("profile:refresh")); } catch (e) {}
+      // Clear all user data, tokens, etc.
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("user");
+      localStorage.removeItem("authToken");
       navigate("/login");
-    }, 800);
+    }, 1000);
   };
 
-  // While loading, show a spinner so we do not display stale info
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <div style={{
-            border: "4px solid #e6eef2",
-            borderTop: `4px solid ${START_BLUE}`,
-            borderRadius: "50%",
-            width: 56,
-            height: 56,
-            animation: "spin 0.9s linear infinite"
-          }} />
-          <div style={{ color: "#333", fontWeight: 600 }}>Loading profile...</div>
-        </div>
-        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  // Use profile from context when available, otherwise fallback to localProfile or sensible defaults
+  const p = profile || localProfile || {};
+  const username = p.username || p.fullName || "MK737";
+  const vipLevel = p.vipLevel ?? p.vip ?? 2;
+  const fullName = p.fullName || username;
+  const walletAddress = p.walletAddress || "";
 
-  if (!profile) {
-    return <div className="p-4" data-i18n="No profile found.">No profile found.</div>;
-  }
-
-  const username = profile.username || profile.fullName || "User";
-  const vipLevel = profile.vipLevel ?? profile.vip ?? 1;
-  const fullName = profile.fullName || username;
-  const walletAddress = profile.walletAddress || "";
-
+  // Row component matching requested UI
   const Row = ({ label, value, onEdit, editText = "Edit", showEdit = true }) => (
     <div
       style={{
@@ -418,13 +374,19 @@ export default function Profile() {
         background: "linear-gradient(120deg, #071e2f 0%, #1f4287 50%, #278ea5 85%, #21e6c1 100%)",
       }}
     >
+      {/* NOTE: This component relies on the global header/footer (do not render them here).
+          Per request we add a "Return Home Page >" link at the top-right of the page content so it appears under the global header. */}
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 16px 80px", color: "#fff" }}>
+        
+
         <div style={{ marginBottom: 18 }}>
           <h1 style={{ color: "#fff", fontSize: 32, margin: 0, fontWeight: 800 }}>Profile</h1>
         </div>
 
+        {/* Thin blue divider */}
         <div style={{ height: 8, background: "linear-gradient(90deg, rgba(31,143,192,1), rgba(33,230,193,1))", borderRadius: 4, marginBottom: 22 }} />
 
+        {/* Profile information content area (dark overlay card inside gradient) */}
         <section
           style={{
             background: "linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.08))",
@@ -434,6 +396,7 @@ export default function Profile() {
             border: "1px solid rgba(255,255,255,0.04)",
           }}
         >
+          {/* Top block: username + membership + credibility */}
           <div style={{ padding: "22px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
@@ -456,6 +419,7 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Rows: Full Name (no edit), Password (edit), Withdraw Password (edit), Bind Wallet Address (edit) */}
           <div>
             <Row label="Full Name" value={fullName} showEdit={false} />
             <Row label="Password" value={"••••••••"} onEdit={() => handleProtectedRoute("/update-password")} editText="Edit Password" />
@@ -465,8 +429,10 @@ export default function Profile() {
         </section>
       </main>
 
+      {/* Logout Modal */}
       <LogoutModal open={showLogoutModal} onClose={() => setShowLogoutModal(false)} onLogout={handleLogout} />
 
+      {/* Modal for protected routes: fully centered and visible */}
       <WithdrawPasswordModalProfile
         open={showModal}
         onClose={() => setShowModal(false)}
@@ -477,8 +443,10 @@ export default function Profile() {
         submitting={submitting}
       />
 
+      {/* Fading grey message for logout */}
       {fadeMsg && <GreyFadeMessage message={fadeMsg} duration={1000} onDone={() => setFadeMsg("")} />}
 
+      {/* Customer Service Modal */}
       <CustomerServiceModal open={showContactModal} onClose={() => setShowContactModal(false)} />
     </div>
   );
