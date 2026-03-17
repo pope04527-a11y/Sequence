@@ -61,20 +61,6 @@ export default function CustomerServiceModal({ open, onClose }) {
     />
   );
 
-  // Helper to sanitize a provided URL and ensure protocol
-  const sanitizeUrl = (raw) => {
-    if (!raw) return "";
-    let s = raw.trim();
-    // Remove accidental repeated protocol (e.g., "https://https://...")
-    s = s.replace(/^(https?:\/\/)+/i, (match) => {
-      // single https://
-      return match.toLowerCase().startsWith("https://") ? "https://" : "http://";
-    });
-    // If still missing protocol, default to https
-    if (!/^https?:\/\//i.test(s)) s = "https://" + s;
-    return s;
-  };
-
   return (
     <div
       style={{
@@ -192,25 +178,8 @@ export default function CustomerServiceModal({ open, onClose }) {
                 return;
               }
 
-              // Prefer a server-provided URL if present (links.customerService).
-              // Sanitize it; if absent or invalid fallback to the onrender host to avoid redirect flicker.
-              const providedRaw = links.customerService && links.customerService.trim();
-              const provided = sanitizeUrl(providedRaw);
-              const fallback = `https://sequence-chat.onrender.com/?user=${encodeURIComponent(username)}`;
-
-              let chatUrl = "";
-              if (provided) {
-                // Append user param safely (respect existing query string)
-                const separator = provided.includes("?") ? "&" : "?";
-                chatUrl = `${provided}${separator}user=${encodeURIComponent(username)}`;
-              } else {
-                chatUrl = fallback;
-              }
-
-              // Open in new tab
-              const newWindow = window.open(chatUrl, "_blank");
-              // Security: prevent access to opener if window opened
-              if (newWindow) newWindow.opener = null;
+              const chatUrl = `https://chat.keymusecommerce.com/?user=${encodeURIComponent(username)}`;
+              window.open(chatUrl, "_blank");
               onClose();
             }}
             style={{
