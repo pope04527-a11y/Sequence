@@ -4,6 +4,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://stacksapp-backend.onrender.com/api/:splat"
+  to = "https://sequence-commerce-nsph.onrender.com/api/:splat"
   status = 200
   force = true
