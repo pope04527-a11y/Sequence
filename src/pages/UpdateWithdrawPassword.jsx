@@ -24,7 +24,7 @@ export default function UpdateWithdrawPassword() {
     setLoading(true);
     try {
       const token = localStorage.getItem("authToken");
-      const BASE_URL = "https://stacksapp-backend-main.onrender.com";
+      const BASE_URL = "https://sequence-commerce-nsph.onrender.com";
       const res = await fetch(`${BASE_URL}/api/change-withdraw-password`, {
         method: "POST",
         headers: {
