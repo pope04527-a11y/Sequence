@@ -100,7 +100,7 @@ function SpinnerOverlay({ duration = 500, onDone }) {
   );
 }
 
-const API_URL = "https://stacksapp-backend-main.onrender.com";
+const API_URL = "https://sequence-commerce-nsph.onrender.com";
 
 export default function Login({ refreshRecords }) {
   const [input, setInput] = useState("");
