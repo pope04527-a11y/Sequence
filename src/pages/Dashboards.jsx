@@ -34,7 +34,7 @@ const vipConfig = {
 };
 
 const START_BLUE = "#1fb6fc";
-const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-commerce-nsph.onrender.com';
 
 // helper: date key in Europe/London to match backend
 function toDateKey(d = new Date()) {
@@ -76,21 +76,21 @@ function TopStatBox({ accountBalance, commissionToday, frozenAmount, dataCount, 
     >
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <div style={rowStyle}>
-          <div style={labelStyle}>Account Balance (GBP)</div>
+          <div style={labelStyle}>Account Balance (USD)</div>
           <div style={valueStyle}>{Number(accountBalance || 0).toFixed(2)}</div>
         </div>
 
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.04)", margin: "6px 0" }} />
 
         <div style={rowStyle}>
-          <div style={labelStyle}>Today's Commission (GBP)</div>
+          <div style={labelStyle}>Today's Commission (USD)</div>
           <div style={valueStyle}>{Number(commissionToday || 0).toFixed(2)}</div>
         </div>
 
         <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.04)", margin: "6px 0" }} />
 
         <div style={rowStyle}>
-          <div style={labelStyle}>Frozen Amount (GBP)</div>
+          <div style={labelStyle}>Frozen Amount (USD)</div>
           <div style={valueStyle}>{Number(frozenAmount || 0).toFixed(2)}</div>
         </div>
 
