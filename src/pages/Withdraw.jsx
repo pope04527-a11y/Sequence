@@ -219,7 +219,7 @@ export default function Withdraw() {
           {/* Account balance card */}
           <div className="account-card" role="region" aria-label="Account balance">
             <div className="account-balance-number">{Number(balance).toFixed(0)}</div>
-            <div className="account-balance-label">Account Balance (GBP)</div>
+            <div className="account-balance-label">Account Balance (USD)</div>
           </div>
 
           {/* Form area */}
