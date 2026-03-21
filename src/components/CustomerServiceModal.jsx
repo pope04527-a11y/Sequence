@@ -131,7 +131,7 @@ export default function CustomerServiceModal({ open, onClose }) {
             disabled={!links.telegram1}
           >
             {avatar}
-            <span style={{ flex: "0 1 auto" }} data-i18n="Telegram">Telegram</span>
+            <span style={{ flex: "0 1 auto" }} data-i18n="Telegram">WhatsApp</span>
             {arrowIcon}
           </button>
 
