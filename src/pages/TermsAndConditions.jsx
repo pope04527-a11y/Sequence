@@ -30,7 +30,7 @@ export default function TermsAndConditions() {
         <div style={{ fontSize: 13.5, lineHeight: 1.45, color: "#111", fontWeight: 700 }}>
           <p style={{ marginTop: 0, marginBottom: 8, fontWeight: 700 }}>I. Starting Optimization Tasks</p>
           <p style={{ margin: "6px 0" }}>
-            <strong>Account Restart Requirement:</strong> Accounts need a minimum of 100 GBP to start new optimization
+            <strong>Account Restart Requirement:</strong> Accounts need a minimum of 100 USD to start new optimization
             tasks. Reset tasks must be processed by contacting Customer Service.
           </p>
           <p style={{ margin: "6px 0" }}>
@@ -40,15 +40,15 @@ export default function TermsAndConditions() {
 
           <p style={{ marginTop: 12, marginBottom: 6, fontWeight: 700 }}>II. Withdrawal Policies</p>
           <p style={{ margin: "6px 0" }}>
-            <strong>Large Withdrawals and VIP Limits:</strong> Contact customer service for withdrawals over 10,000 GBP.
+            <strong>Large Withdrawals and VIP Limits:</strong> Contact customer service for withdrawals over 10,000 USD.
             Withdrawal limits vary by VIP level:
           </p>
 
           <ul style={{ margin: "6px 0 6px 20px", fontWeight: 700 }}>
-            <li>VIP1: Up to 5,000 GBP</li>
-            <li>VIP2: Up to 10,000 GBP</li>
-            <li>VIP3: Up to 20,000 GBP</li>
-            <li>VIP4: Up to 100,000 GBP</li>
+            <li>VIP1: Up to 5,000 USD</li>
+            <li>VIP2: Up to 10,000 USD</li>
+            <li>VIP3: Up to 20,000 USD</li>
+            <li>VIP4: Up to 100,000 USD</li>
           </ul>
 
           <p style={{ margin: "6px 0" }}>
