@@ -514,7 +514,7 @@ export default function Tasks() {
                 marginBottom: 1,
                 lineHeight: "1.12"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span>{" "}
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span>{" "}
                 <span style={{ color: START_BLUE, fontWeight: 700 }}>{product.price}</span>
               </div>
               <div style={{
@@ -560,7 +560,7 @@ export default function Tasks() {
                 fontSize: 21.5,
                 letterSpacing: ".01em"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span> {product.price}
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span> {product.price}
               </div>
             </div>
             <div style={{
@@ -579,7 +579,7 @@ export default function Tasks() {
                 fontSize: 21.5,
                 letterSpacing: ".01em"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span> {product.commission}
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span> {product.commission}
               </div>
             </div>
           </div>
@@ -769,7 +769,7 @@ export default function Tasks() {
               <div style={{ fontWeight: 700, color: "#314155", marginBottom: 6 }}>Account Balance</div>
               <div style={{ fontSize: 44, fontWeight: 800, color: "#111", marginBottom: 8 }}>
                 {Number(balance).toFixed(2)}
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#222", marginLeft: 8 }}>(GBP)</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#222", marginLeft: 8 }}>(USD)</span>
               </div>
               <div>
                 <button
@@ -794,10 +794,10 @@ export default function Tasks() {
             <div className="label">DATA</div>
 
             <div className="big" style={{ marginBottom: 6 }}>{Number(localCommissionToday).toFixed(5)}</div>
-            <div className="label">TODAY'S EARNINGS (GBP)</div>
+            <div className="label">TODAY'S EARNINGS (USD)</div>
 
             <div className="big" style={{ marginBottom: 6 }}>{Number(balance).toFixed(6)}</div>
-            <div className="label">BALANCE DUE (GBP)</div>
+            <div className="label">BALANCE DUE (USD)</div>
           </div>
 
           <div style={{ textAlign: "center", marginBottom: 20 }}>
