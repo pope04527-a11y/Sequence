@@ -486,14 +486,14 @@ const Records = () => {
             <div>
               <div style={{ fontSize: 12, color: "#9aa7b6" }}>Total Amount</div>
               <div style={{ fontWeight: 800, color: START_BLUE }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700, marginRight: 6 }}>GBP</span>
+                <span style={{ color: BLACK_BG, fontWeight: 700, marginRight: 6 }}>USD</span>
                 {record.product?.price}
               </div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: "#9aa7b6", textAlign: "right" }}>Commission</div>
               <div style={{ fontWeight: 800, color: START_BLUE, textAlign: "right" }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700, marginRight: 6 }}>GBP</span>
+                <span style={{ color: BLACK_BG, fontWeight: 700, marginRight: 6 }}>USD</span>
                 {record.product?.commission || "0.00"}
               </div>
             </div>
