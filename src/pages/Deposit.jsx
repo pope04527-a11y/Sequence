@@ -160,7 +160,7 @@ export default function Deposit() {
 
           <div className="stat-cards" aria-live="polite">
             <div className="stat-card" role="status" aria-label="Account Balance">
-              <div className="stat-label">Account Balance (GBP)</div>
+              <div className="stat-label">Account Balance (USD)</div>
               <div className="stat-value">{Number(balance || 0).toFixed(0)}</div>
             </div>
 
@@ -170,7 +170,7 @@ export default function Deposit() {
             </div>
 
             <div className="stat-card" role="status" aria-label="Balance Due">
-              <div className="stat-label">Balance Due (GBP)</div>
+              <div className="stat-label">Balance Due (USD)</div>
               <div className="stat-value">{Number(balanceDue || 0).toFixed(6)}</div>
             </div>
           </div>
