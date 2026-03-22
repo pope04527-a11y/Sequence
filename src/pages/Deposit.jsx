@@ -165,7 +165,7 @@ export default function Deposit() {
             </div>
 
             <div className="stat-card" role="status" aria-label="Frozen Amount">
-              <div className="stat-label">Frozen Amount (GBP)</div>
+              <div className="stat-label">Frozen Amount (USD)</div>
               <div className="stat-value">{Number(frozenAmount || 0).toFixed(0)}</div>
             </div>
 
