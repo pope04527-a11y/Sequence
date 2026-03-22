@@ -185,7 +185,7 @@ function RegisteredDays({ records, userProfile, todaysTasks, maxTasks, refreshPr
   const days = Array.from({ length: 30 }).map((_, i) => {
     const idx = i + 1;
     const signed = idx <= (signState.signedCount || 0);
-    const milestone = idx === 5 ? "500 GBP" : idx === 15 ? "1500 GBP" : idx === 30 ? "3000 GBP" : null;
+    const milestone = idx === 5 ? "500 USD" : idx === 15 ? "1500 USD" : idx === 30 ? "3000 USD" : null;
     return { idx, signed, milestone };
   });
 
