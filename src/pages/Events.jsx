@@ -1,9 +1,9 @@
 import React from "react";
 
 // Event images (kept in dashboard images folder)
-import event1 from "../assets/images/dashboard/event1.jpg";
-import event2 from "../assets/images/dashboard/event2.jpg";
-import event3 from "../assets/images/dashboard/event3.jpg";
+import event1 from "../assets/images/dashboard/2Event1.png";
+import event2 from "../assets/images/dashboard/2(2)Event2.png";
+import event3 from "../assets/images/dashboard/2Event3.png";
 
 /**
  * Events.jsx
