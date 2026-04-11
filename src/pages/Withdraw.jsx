@@ -57,7 +57,7 @@ export default function Withdraw() {
       return;
     }
     const token = localStorage.getItem("authToken");
-    const BASE_URL = "https://sequence-commerce-nsph.onrender.com";
+    const BASE_URL = "https://sequence-backend-5v07.onrender.com";
     const res = await fetch(`${BASE_URL}/api/withdraw`, {
       method: "POST",
       headers: {
