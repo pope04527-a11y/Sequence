@@ -34,7 +34,7 @@ const vipConfig = {
 };
 
 const START_BLUE = "#1fb6fc";
-const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-commerce-nsph.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-backend-5v07.onrender.com';
 
 // helper: date key in Europe/London to match backend
 function toDateKey(d = new Date()) {
