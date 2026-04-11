@@ -16,7 +16,7 @@ import UpdatePassword from "./UpdatePassword.jsx";
 import UpdateWithdrawPassword from "./UpdateWithdrawPassword.jsx";
 
 // ---- Updated: Use your custom API domain ----
-const API_URL = "https://sequence-commerce-nsph.onrender.com";
+const API_URL = "https://sequence-backend-5v07.onrender.com";
 
 // --- Consistent blue (from start button etc.) ---
 const START_BLUE = "#1fb6fc";
