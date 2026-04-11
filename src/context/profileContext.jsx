@@ -5,7 +5,7 @@ const ProfileContext = createContext();
 export const ProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const BASE_URL = "https://sequence-commerce-nsph.onrender.com";
+  const BASE_URL = "https://sequence-backend-5v07.onrender.com";
 
   const fetchProfile = async () => {
     const token = localStorage.getItem("authToken");
