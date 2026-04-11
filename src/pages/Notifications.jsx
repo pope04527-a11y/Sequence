@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "https://stacksapp-backend-main.onrender.com";
+const BACKEND_URL = "https://sequence-backend-5v07.onrender.com";
 const START_BLUE = "#1fb6fc";
 
 export default function Notifications() {
