@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-const BASE_URL = "https://sequence-commerce-nsph.onrender.com";
+const BASE_URL = "https://sequence-backend-5v07.onrender.com";
 
 export const BalanceContext = createContext();
 
