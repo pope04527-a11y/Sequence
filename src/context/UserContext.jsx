@@ -9,7 +9,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Use production backend
-  const BASE_URL = "https://sequence-commerce-nsph.onrender.com";
+  const BASE_URL = "https://sequence-backend-5v07.onrender.com";
 
   // Load user from localStorage first, then refresh from backend
   useEffect(() => {
