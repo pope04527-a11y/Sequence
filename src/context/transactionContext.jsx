@@ -6,7 +6,7 @@ export const TransactionProvider = ({ children }) => {
   const [deposits, setDeposits] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const BASE_URL = "https://sequence-backend-5v07.onrender.com";
+  const BASE_URL = "https://sequence-admins.onrender.com";
 
   const fetchTransactions = async () => {
     const token = localStorage.getItem("authToken");
