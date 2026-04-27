@@ -18,7 +18,7 @@ import startButtonImg from "../assets/images/start/startbutton.png";
     do not disagree about when combos should be issued.
 */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-backend-5v07.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-admins.onrender.com';
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dhubpqnss/image/upload/v1748650920/products/";
 const imageStart = 42;
