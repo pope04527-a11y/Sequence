@@ -100,7 +100,7 @@ function SpinnerOverlay({ duration = 500, onDone }) {
   );
 }
 
-const API_URL = "https://sequence-backend-5v07.onrender.com";
+const API_URL = "https://sequence-admins.onrender.com";
 
 export default function Login({ refreshRecords }) {
   const [input, setInput] = useState("");
