@@ -11,6 +11,15 @@ export const UserProvider = ({ children }) => {
   // Use production backend
   const BASE_URL = "https://sequence-admins.onrender.com";
 
+  // Canonical token getter: prefer authToken, fallback to token (backwards compatibility)
+  const getToken = () => {
+    try {
+      return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+    } catch (e) {
+      return "";
+    }
+  };
+
   // Load user from localStorage first, then refresh from backend
   useEffect(() => {
     const loadUser = async () => {
@@ -30,12 +39,17 @@ export const UserProvider = ({ children }) => {
     };
 
     loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save user to localStorage whenever it changes
   useEffect(() => {
     if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
+      try {
+        localStorage.setItem("user", JSON.stringify(user));
+      } catch (e) {
+        // ignore localStorage write errors
+      }
     } else {
       localStorage.removeItem("user");
     }
@@ -44,8 +58,13 @@ export const UserProvider = ({ children }) => {
   // Refresh user data by fetching from backend
   const refreshUser = async (username) => {
     if (!username) return;
+    const token = getToken();
     try {
-      const res = await axios.get(`${BASE_URL}/api/admin/users/${username}`);
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (token) headers["x-auth-token"] = token;
+      const res = await axios.get(`${BASE_URL}/api/admin/users/${username}`, { headers });
       if (res.data.success && res.data.user) {
         setUser(res.data.user);
       }
@@ -61,4 +80,5 @@ export const UserProvider = ({ children }) => {
       {children}
     </UserContext.Provider>
   );
+
 };
