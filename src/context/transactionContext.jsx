@@ -8,15 +8,24 @@ export const TransactionProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const BASE_URL = "https://sequence-admins.onrender.com";
 
+  // Canonical token getter: prefer authToken, fallback to token (backwards compatibility)
+  const getToken = () => {
+    try {
+      return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+    } catch (e) {
+      return "";
+    }
+  };
+
   const fetchTransactions = async () => {
-    const token = localStorage.getItem("authToken");
+    const token = getToken();
     if (!token) return;
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/api/transactions`, {
         headers: {
           "Content-Type": "application/json",
-          "X-Auth-Token": token,
+          "x-auth-token": token,
         },
       });
       const data = await res.json();
@@ -33,7 +42,7 @@ export const TransactionProvider = ({ children }) => {
 
   useEffect(() => {
     fetchTransactions();
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // You can call refresh after a new deposit or withdraw
