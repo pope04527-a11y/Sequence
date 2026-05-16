@@ -114,7 +114,7 @@ export default function Login({ refreshRecords }) {
     if (!token) return null;
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      "x-auth-token": token
     };
 
     try {
@@ -134,11 +134,15 @@ export default function Login({ refreshRecords }) {
           if (json && json.success && json.user) {
             profile = json.user;
             // Save main canonical user profile in localStorage
-            localStorage.setItem("currentUser", JSON.stringify(profile));
-            localStorage.setItem("user", profile.username || "");
-            // Also keep token keys for compatibility across the app
-            localStorage.setItem("authToken", token);
-            localStorage.setItem("token", token);
+            try {
+              localStorage.setItem("currentUser", JSON.stringify(profile));
+              localStorage.setItem("user", profile.username || "");
+              // Keep both keys for backward compatibility but authToken is canonical
+              localStorage.setItem("authToken", token);
+              localStorage.setItem("token", token);
+            } catch (e) {
+              // ignore localStorage set errors
+            }
           }
         } catch (e) {
           // ignore parse errors
@@ -151,7 +155,9 @@ export default function Login({ refreshRecords }) {
         try {
           const json = await tasksRes.value.json();
           if (json && json.success && json.records) {
-            localStorage.setItem("taskRecords", JSON.stringify(json.records));
+            try {
+              localStorage.setItem("taskRecords", JSON.stringify(json.records));
+            } catch (e) { /* ignore */ }
           }
         } catch (e) { /* ignore */ }
       }
@@ -161,7 +167,9 @@ export default function Login({ refreshRecords }) {
         try {
           const json = await txRes.value.json();
           if (json && json.success) {
-            localStorage.setItem("transactions", JSON.stringify({ deposits: json.deposits, withdrawals: json.withdrawals }));
+            try {
+              localStorage.setItem("transactions", JSON.stringify({ deposits: json.deposits, withdrawals: json.withdrawals }));
+            } catch (e) { /* ignore */ }
           }
         } catch (e) { /* ignore */ }
       }
@@ -201,13 +209,23 @@ export default function Login({ refreshRecords }) {
 
         // Save initial user object & token quickly so other sync code can read them
         if (data.user) {
-          // store the raw user returned by login (may be partial)
-          localStorage.setItem("currentUser", JSON.stringify(data.user));
-          localStorage.setItem("user", data.user.username || "");
+          try {
+            // store the raw user returned by login (may be partial)
+            localStorage.setItem("currentUser", JSON.stringify(data.user));
+            localStorage.setItem("user", data.user.username || "");
+          } catch (e) {
+            // ignore
+          }
         }
         if (token) {
-          localStorage.setItem("authToken", token);
-          localStorage.setItem("token", token);
+          try {
+            // canonical key
+            localStorage.setItem("authToken", token);
+            // keep legacy key for backwards compatibility
+            localStorage.setItem("token", token);
+          } catch (e) {
+            // ignore
+          }
         }
 
         setFadeMsg("Login Success");
