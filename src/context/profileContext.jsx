@@ -7,15 +7,24 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const BASE_URL = "https://sequence-admins.onrender.com";
 
+  // Canonical token getter: prefer authToken, fallback to token (backwards compatibility)
+  const getToken = () => {
+    try {
+      return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+    } catch (e) {
+      return "";
+    }
+  };
+
   const fetchProfile = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
+    const token = getToken();
+    if (!token) return null;
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/api/user-profile`, {
         headers: {
           "Content-Type": "application/json",
-          "X-Auth-Token": token,
+          "x-auth-token": token,
         },
       });
       const data = await res.json();
