@@ -1,4 +1,3 @@
-// (full file — removed hard-coded COMBO_TRIGGER_INDEX and the pre-check using it)
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
@@ -14,8 +13,12 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   Changes in this version:
   - Removed the hard-coded COMBO_TRIGGER_INDEX and the local pre-check that tried to predict combos.
     The client now relies on the server's decision (result.isCombo) after calling /api/start-task.
-  - The rest of the code is preserved; only the pre-start predictive check was removed so client/server
-    do not disagree about when combos should be issued.
+  - Start task now uses the centralized addTaskRecord from TaskRecordsContext so balance updates
+    returned by the server are dispatched consistently via the balanceUpdated event and handled
+    by BalanceContext.
+  - Token/header handling removed from this file (delegated to TaskRecordsContext).
+  - The rest of the code is preserved; only the pre-start predictive check and direct fetch were removed
+    so client/server do not disagree about when combos should be issued.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-admins.onrender.com';
@@ -294,46 +297,21 @@ export default function Tasks() {
     setTimeout(() => setShowOptimizingToast(false), 1150);
 
     try {
-      // build headers: prefer real token; do NOT send custom dev header (avoid CORS preflight)
-      const headers = { "Content-Type": "application/json" };
-      let bodyPayload = {};
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          headers["x-auth-token"] = token;
-          bodyPayload = {};
-        } else if (process.env.NODE_ENV !== "production") {
-          // prefer username from profile if available
-          const devUsername = (userProfile && userProfile.username) || localStorage.getItem("devUsername");
-          if (devUsername) {
-            bodyPayload = { devUsername };
-          }
-        }
-      } catch (e) {
-        // ignore localStorage errors
-      }
-
-      const resp = await fetch(`${API_BASE}/api/start-task`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(bodyPayload),
-      });
-
-      const result = await resp.json();
+      // Use centralized addTaskRecord which handles auth header and dispatches balanceUpdated event.
+      const result = await addTaskRecord({ image: imageForTask });
 
       // ensure UI flags reset
       setOptimizing(false);
       setShowOptimizingOverlay(false);
       setShowOptimizingToast(false);
 
-      if (!resp.ok) {
-        // server returned non-2xx
-        showGreyToast(result.message || "Failed to start task. Try again.");
+      if (!result) {
+        showGreyToast("Failed to start task. Try again.");
         return;
       }
 
-      // server signals a combo task was created
-      if (result && result.isCombo) {
+      // If addTaskRecord returned isCombo in its payload
+      if (result.isCombo) {
         showGreyToast("Please submit the previous rating before you proceed.", 1800);
         setTimeout(() => {
           navigate("/deposit");
@@ -341,8 +319,9 @@ export default function Tasks() {
         return;
       }
 
-      if (result && result.task) {
-        const backendTask = result.task;
+      // If server returned a task object
+      const backendTask = result.task || (result && result.task) || (result && result.task);
+      if (backendTask) {
         if (!backendTask.product) backendTask.product = {};
         if (!backendTask.product.image) backendTask.product.image = imageForTask;
         setCurrentTask(backendTask);
@@ -372,7 +351,7 @@ export default function Tasks() {
 
     const start = Date.now();
     try {
-      // Perform submission API call
+      // Perform submission API call via context helper which already refreshes records
       const result = await submitTaskRecord(currentTask.taskCode);
 
       if (!result || !result.success) {
