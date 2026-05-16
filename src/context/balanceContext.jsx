@@ -12,18 +12,27 @@ export function BalanceProvider({ children }) {
   const [vipLevel, setVipLevel] = useState("VIP1");
   const [userProfile, setUserProfile] = useState(null);
 
+  // Canonical token getter: prefer authToken, fallback to token (backwards compatibility)
+  const getToken = () => {
+    try {
+      return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+    } catch (e) {
+      return "";
+    }
+  };
+
   // Fetch user profile from backend on mount or after login
   const fetchProfile = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
+    const token = getToken();
+    if (!token) return null;
     try {
       const res = await fetch(`${BASE_URL}/api/user-profile`, {
         headers: {
           "Content-Type": "application/json",
-          "X-Auth-Token": token,
+          "x-auth-token": token,
         },
       });
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const data = await res.json();
       if (data.success && data.user) {
         setUsername(data.user.username || "");
@@ -36,15 +45,62 @@ export function BalanceProvider({ children }) {
             : (data.user.taskCountToday ?? 0)
         );
         setUserProfile(data.user);
+        return data.user;
+      } else {
+        // If response was ok but contained no user, clear profile to avoid stale info
+        setUserProfile(null);
+        return null;
       }
     } catch (err) {
       console.error("Failed to fetch user profile", err);
+      return null;
     }
   };
 
   useEffect(() => {
-    fetchProfile();
-    // eslint-disable-next-line
+    // Initial fetch on mount
+    fetchProfile().catch(() => {});
+    // Listen for cross-app balance updates dispatched by task start/submit handlers.
+    const onBalanceUpdated = (e) => {
+      try {
+        const d = (e && e.detail) || {};
+        if (typeof d.balance !== "undefined") {
+          setBalance(d.balance);
+        }
+        if (typeof d.commissionToday !== "undefined") {
+          setCommissionToday(d.commissionToday);
+        }
+        if (d.userProfile) {
+          setUserProfile(d.userProfile);
+          setUsername(d.userProfile.username || "");
+          setVipLevel(d.userProfile.vipLevel || "VIP1");
+          setTaskCountToday(
+            typeof d.userProfile.taskCountThisSet === "number"
+              ? d.userProfile.taskCountThisSet
+              : (d.userProfile.taskCountToday ?? 0)
+          );
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener("balanceUpdated", onBalanceUpdated);
+
+    // Also respond to storage events so multiple tabs keep in sync
+    const onStorage = (ev) => {
+      if (!ev) return;
+      if (ev.key === "authToken" || ev.key === "token" || ev.key === "currentUser") {
+        // token changed (login/logout) or currentUser changed — refresh profile
+        fetchProfile().catch(() => {});
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("balanceUpdated", onBalanceUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Helper: call this after task start or submit to update balance etc from backend
@@ -52,11 +108,12 @@ export function BalanceProvider({ children }) {
 
   // Deposit
   const deposit = async (amount) => {
-    const token = localStorage.getItem("authToken");
+    const token = getToken();
+    if (!token) return;
     try {
       const res = await fetch(`${BASE_URL}/api/deposit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Auth-Token": token },
+        headers: { "Content-Type": "application/json", "x-auth-token": token },
         body: JSON.stringify({ amount }),
       });
       const data = await res.json();
@@ -68,11 +125,12 @@ export function BalanceProvider({ children }) {
 
   // Withdraw
   const withdraw = async (amount) => {
-    const token = localStorage.getItem("authToken");
+    const token = getToken();
+    if (!token) return false;
     try {
       const res = await fetch(`${BASE_URL}/api/withdraw`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Auth-Token": token },
+        headers: { "Content-Type": "application/json", "x-auth-token": token },
         body: JSON.stringify({ amount }),
       });
       const data = await res.json();
