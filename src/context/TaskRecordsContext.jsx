@@ -4,22 +4,13 @@ const TaskRecordsContext = createContext();
 
 export const TaskRecordsProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
-  const BASE_URL = "https://sequence-admins.onrender.com";
-
-  // Helper to get canonical token (prefer authToken, fallback to token)
-  const getToken = () => {
-    try {
-      return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
-    } catch (e) {
-      return "";
-    }
-  };
+  const BASE_URL = "https://sequence2-backend.onrender.com";
 
   // Fetch records from backend and return the fetched array for callers that await it.
   // Also dispatches a CustomEvent 'taskRecordsUpdated' after updating state so other parts
   // of the app can react immediately if needed.
   const fetchTaskRecords = async () => {
-    const token = getToken();
+    const token = localStorage.getItem("authToken");
     // If there's no token, clear records and return empty array so callers get a deterministic result.
     if (!token) {
       setRecords([]);
@@ -34,7 +25,7 @@ export const TaskRecordsProvider = ({ children }) => {
       const res = await fetch(`${BASE_URL}/api/task-records`, {
         headers: {
           "Content-Type": "application/json",
-          "x-auth-token": token,
+          "X-Auth-Token": token,
         },
       });
       const data = await res.json();
@@ -77,35 +68,19 @@ export const TaskRecordsProvider = ({ children }) => {
   // Supports both normal and combo (API will determine which is triggered)
   // Returns: for combo, { isCombo: true, task, ... }; for normal, { task }
   const addTaskRecord = async (taskObj) => {
-    const token = getToken();
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
     try {
       const res = await fetch(`${BASE_URL}/api/start-task`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-auth-token": token,
+          "X-Auth-Token": token,
         },
         body: JSON.stringify({ image: taskObj.image }), // For combo, only image is used as hint
       });
       const data = await res.json();
       if (data && data.success) {
-        // If server provided updated balance/commission info include it in a cross-app event
-        try {
-          if (typeof window !== "undefined" && (typeof data.currentBalance !== "undefined" || typeof data.commissionToday !== "undefined")) {
-            window.dispatchEvent(new CustomEvent("balanceUpdated", {
-              detail: {
-                balance: data.currentBalance,
-                commissionToday: data.commissionToday,
-                // include full user profile if server provides it in future
-                userProfile: data.user || null
-              }
-            }));
-          }
-        } catch (e) {
-          // ignore event dispatch errors
-        }
-
         // Re-fetch records and return the API response
         await fetchTaskRecords();
         if (data.isCombo) {
@@ -124,33 +99,19 @@ export const TaskRecordsProvider = ({ children }) => {
 
   // Submit a task by taskCode ONLY!
   const submitTaskRecord = async (taskCode) => {
-    const token = getToken();
+    const token = localStorage.getItem("authToken");
     if (!token) return { success: false, message: "Not authenticated" };
     try {
       const res = await fetch(`${BASE_URL}/api/submit-task`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-auth-token": token,
+          "X-Auth-Token": token,
         },
         body: JSON.stringify({ taskCode }),
       });
       const data = await res.json();
       if (data && data.success) {
-        // If server provided updated balance/commission info include it in a cross-app event
-        try {
-          if (typeof window !== "undefined" && (typeof data.currentBalance !== "undefined" || typeof data.commissionToday !== "undefined")) {
-            window.dispatchEvent(new CustomEvent("balanceUpdated", {
-              detail: {
-                balance: data.currentBalance,
-                commissionToday: data.commissionToday,
-                userProfile: data.user || null
-              }
-            }));
-          }
-        } catch (e) {
-          // ignore
-        }
         // Refresh records so UI shows the latest immediately
         await fetchTaskRecords();
         return data;
