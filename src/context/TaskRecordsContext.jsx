@@ -4,7 +4,7 @@ const TaskRecordsContext = createContext();
 
 export const TaskRecordsProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
-  const BASE_URL = "https://sequence2-backend.onrender.com";
+  const BASE_URL = "https://sequence-admins.onrender.com";
 
   // Fetch records from backend and return the fetched array for callers that await it.
   // Also dispatches a CustomEvent 'taskRecordsUpdated' after updating state so other parts
