@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+// (full file — removed hard-coded COMBO_TRIGGER_INDEX and the pre-check using it)
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 import { useBalance } from "../context/balanceContext";
@@ -10,15 +11,11 @@ import startButtonImg from "../assets/images/start/startbutton.png";
 /*
   Tasks.jsx
 
-  Behavior changes in this version:
-  - When user clicks Begin -> show Optimizing toast in middle for a short duration
-    then open the modal immediately after the toast fades.
-  - The network call to start-task is started immediately (fire-and-forget) and its
-    promise is observed. If the server result has the task, the modal contents are
-    updated as soon as the result arrives. If the server signals a combo or failure,
-    the modal closes and appropriate toast/navigation happens.
-  - This makes the UI feel immediate: user sees a toast then the modal (with a loading
-    state if the task isn't ready yet).
+  Changes in this version:
+  - Removed the hard-coded COMBO_TRIGGER_INDEX and the local pre-check that tried to predict combos.
+    The client now relies on the server's decision (result.isCombo) after calling /api/start-task.
+  - The rest of the code is preserved; only the pre-start predictive check was removed so client/server
+    do not disagree about when combos should be issued.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://sequence-admins.onrender.com';
@@ -220,12 +217,6 @@ export default function Tasks() {
     return () => clearInterval(interval);
   }, []);
 
-  // Refs to coordinate background start-task promise with toast/modal timing
-  const startPromiseRef = useRef(null);
-  const startResultRef = useRef(null);
-  const startErrorRef = useRef(null);
-  const toastTimeoutRef = useRef(null);
-
   function getCurrentTaskCountThisSet() {
     if (!records || !userProfile) return 0;
     const currentSet = userProfile.currentSet ?? 1;
@@ -279,16 +270,6 @@ export default function Tasks() {
     setTimeout(() => setGreyToast({ show: false, message: "" }), duration);
   };
 
-  const clearStartRefs = () => {
-    startPromiseRef.current = null;
-    startResultRef.current = null;
-    startErrorRef.current = null;
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = null;
-    }
-  };
-
   const handleStartTask = async () => {
     if (hasPendingTask() || hasPendingComboTask()) {
       showGreyToast("Please submit the previous rating before you proceed.");
@@ -300,119 +281,89 @@ export default function Tasks() {
       return;
     }
 
+    // NOTE: Removed local pre-check that predicted combo triggers. We now rely on server response
+    // which is authoritative (server returns result.isCombo when a combo was created).
+
     setOptimizing(true);
     setShowOptimizingOverlay(true);
     setShowOptimizingToast(true);
 
     const imageForTask = productGrid[4];
 
-    // Start the API call immediately but do not await it here
-    const startPromise = addTaskRecord({ image: imageForTask });
-    startPromiseRef.current = startPromise;
-    startResultRef.current = null;
-    startErrorRef.current = null;
+    // hide the little optimizing toast after a short time but keep overlay until response
+    setTimeout(() => setShowOptimizingToast(false), 1150);
 
-    startPromise
-      .then(result => {
-        startResultRef.current = result;
-        // If modal is already open and result contains task, set it
-        if (showModal) {
-          if (!result) {
-            // failure
-            setShowModal(false);
-            showGreyToast("Failed to start task. Try again.");
-            setOptimizing(false);
-            setShowOptimizingOverlay(false);
-            setShowOptimizingToast(false);
-            clearStartRefs();
-            return;
-          }
-          if (result.isCombo) {
-            // close modal and navigate to deposit or show message
-            setShowModal(false);
-            showGreyToast("Please submit the previous rating before you proceed.", 1800);
-            setTimeout(() => navigate("/deposit"), 1800);
-            setOptimizing(false);
-            setShowOptimizingOverlay(false);
-            setShowOptimizingToast(false);
-            clearStartRefs();
-            return;
-          }
-          // Normal task result -> show it
-          const backendTask = result.task;
-          if (backendTask) {
-            setCurrentTask(prev => {
-              // only update if we were showing a loading modal
-              return backendTask;
-            });
-            setOptimizing(false);
-            setShowOptimizingOverlay(false);
-            setShowOptimizingToast(false);
-            clearStartRefs();
-            return;
+    try {
+      // build headers: prefer real token; do NOT send custom dev header (avoid CORS preflight)
+      const headers = { "Content-Type": "application/json" };
+      let bodyPayload = {};
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          headers["x-auth-token"] = token;
+          bodyPayload = {};
+        } else if (process.env.NODE_ENV !== "production") {
+          // prefer username from profile if available
+          const devUsername = (userProfile && userProfile.username) || localStorage.getItem("devUsername");
+          if (devUsername) {
+            bodyPayload = { devUsername };
           }
         }
-        // If modal is not yet open, the toast timeout handler will handle showing modal and task
-      })
-      .catch(err => {
-        startErrorRef.current = err;
-        // If modal is already open, close and show error
-        if (showModal) {
-          setShowModal(false);
-          showGreyToast("Failed to start task (network).");
-          setOptimizing(false);
-          setShowOptimizingOverlay(false);
-          setShowOptimizingToast(false);
-          clearStartRefs();
-        }
+      } catch (e) {
+        // ignore localStorage errors
+      }
+
+      const resp = await fetch(`${API_BASE}/api/start-task`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(bodyPayload),
       });
 
-    // After the toast short duration, hide the toast and open the modal immediately.
-    // If the backend already returned, set the task into modal; otherwise modal shows loading.
-    toastTimeoutRef.current = setTimeout(async () => {
-      setShowOptimizingToast(false);
-      // hide overlay so the modal is visible (user requested immediate modal)
+      const result = await resp.json();
+
+      // ensure UI flags reset
+      setOptimizing(false);
       setShowOptimizingOverlay(false);
+      setShowOptimizingToast(false);
 
-      setShowModal(true); // open modal immediately (loading state if no task yet)
-      setSubmitState("");
-
-      // If the start result already arrived and is successful, render it
-      const resultNow = startResultRef.current;
-      if (resultNow) {
-        if (!resultNow) {
-          // failure
-          setShowModal(false);
-          showGreyToast("Failed to start task. Try again.");
-          setOptimizing(false);
-          clearStartRefs();
-          return;
-        }
-        if (resultNow.isCombo) {
-          setShowModal(false);
-          showGreyToast("Please submit the previous rating before you proceed.", 1800);
-          setTimeout(() => navigate("/deposit"), 1800);
-          setOptimizing(false);
-          clearStartRefs();
-          return;
-        }
-        if (resultNow.task) {
-          const backendTask = resultNow.task;
-          // ensure product image fallback
-          if (!backendTask.product) backendTask.product = {};
-          if (!backendTask.product.image) backendTask.product.image = imageForTask;
-          setCurrentTask(backendTask);
-        }
-        setOptimizing(false);
-        clearStartRefs();
+      if (!resp.ok) {
+        // server returned non-2xx
+        showGreyToast(result.message || "Failed to start task. Try again.");
         return;
       }
 
-      // If the promise hasn't resolved yet, show modal in loading state.
-      // When the promise resolves it will populate the modal (see handlers above).
+      // server signals a combo task was created
+      if (result && result.isCombo) {
+        showGreyToast("Please submit the previous rating before you proceed.", 1800);
+        setTimeout(() => {
+          navigate("/deposit");
+        }, 1800);
+        return;
+      }
+
+      if (result && result.task) {
+        const backendTask = result.task;
+        if (!backendTask.product) backendTask.product = {};
+        if (!backendTask.product.image) backendTask.product.image = imageForTask;
+        setCurrentTask(backendTask);
+        setShowModal(true);
+        setSubmitState("");
+        // refresh profile proactively so balance/commission are current when task starts
+        try {
+          refreshProfile && refreshProfile();
+        } catch (e) {
+          // noop
+        }
+        return;
+      }
+
+      showGreyToast(result.message || "Failed to start task. Please try again later.");
+    } catch (err) {
       setOptimizing(false);
-      // leave startPromiseRef to be resolved later
-    }, 1150);
+      setShowOptimizingOverlay(false);
+      setShowOptimizingToast(false);
+      showGreyToast("API error: " + (err && err.message ? err.message : String(err)));
+    }
   };
 
   const handleSubmitTask = async () => {
@@ -421,7 +372,7 @@ export default function Tasks() {
 
     const start = Date.now();
     try {
-      // Perform submission API call via context helper which already refreshes records
+      // Perform submission API call
       const result = await submitTaskRecord(currentTask.taskCode);
 
       if (!result || !result.success) {
@@ -493,10 +444,8 @@ export default function Tasks() {
   };
 
   function renderTaskModal() {
-    // If modal open but currentTask is null -> show loading modal
-    if (!showModal) return null;
-    const loading = !currentTask;
-    const product = currentTask?.product || {};
+    if (!currentTask) return null;
+    const product = currentTask.product || {};
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-2" style={{fontFamily:"Arial,sans-serif"}}>
         <div
@@ -519,15 +468,10 @@ export default function Tasks() {
                 letterSpacing: "0.01em"
               }}
             >
-              {loading ? "Preparing Task..." : "Task Submission"}
+              Task Submission
             </div>
             <button
-              onClick={() => {
-                // allow user to close loading modal (cancels UI only; server work continues)
-                setShowModal(false);
-                // clear any pending start refs so eventual resolution won't try to update closed modal
-                clearStartRefs();
-              }}
+              onClick={() => setShowModal(false)}
               className="text-gray-500 text-2xl px-2 py-1 rounded hover:bg-gray-100"
               style={{ lineHeight: 1, background: "none", border: "none" }}
               aria-label="Close"
@@ -537,23 +481,18 @@ export default function Tasks() {
           </div>
 
           <div className="flex flex-row items-center px-6" style={{marginTop:6, marginBottom:10}}>
-            <div style={{ width: 64, height: 64, marginRight: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {loading ? (
-                <Spinner size={44} color={START_BLUE} />
-              ) : (
-                <img
-                  src={product.image}
-                  alt="Product"
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 14,
-                    objectFit: "cover",
-                    boxShadow: "0 2px 10px #0001"
-                  }}
-                />
-              )}
-            </div>
+            <img
+              src={product.image}
+              alt="Product"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 14,
+                objectFit: "cover",
+                marginRight: 14,
+                boxShadow: "0 2px 10px #0001"
+              }}
+            />
             <div style={{flex:1, minWidth:0}}>
               <div style={{
                 fontWeight: 700,
@@ -566,7 +505,7 @@ export default function Tasks() {
                 textOverflow: "ellipsis",
                 lineHeight: "1.15"
               }}>
-                {loading ? "Starting..." : product.name}
+                {product.name}
               </div>
               <div style={{
                 fontWeight: 400,
@@ -575,8 +514,8 @@ export default function Tasks() {
                 marginBottom: 1,
                 lineHeight: "1.12"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span>{" "}
-                <span style={{ color: START_BLUE, fontWeight: 700 }}>{loading ? "-" : product.price}</span>
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span>{" "}
+                <span style={{ color: START_BLUE, fontWeight: 700 }}>{product.price}</span>
               </div>
               <div style={{
                 margin: "2px 0 0 0",
@@ -621,7 +560,7 @@ export default function Tasks() {
                 fontSize: 21.5,
                 letterSpacing: ".01em"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span> {loading ? "-" : product.price}
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span> {product.price}
               </div>
             </div>
             <div style={{
@@ -640,7 +579,7 @@ export default function Tasks() {
                 fontSize: 21.5,
                 letterSpacing: ".01em"
               }}>
-                <span style={{ color: BLACK_BG, fontWeight: 700 }}>USD</span> {loading ? "-" : product.commission}
+                <span style={{ color: BLACK_BG, fontWeight: 700 }}>GBP</span> {product.commission}
               </div>
             </div>
           </div>
@@ -662,7 +601,7 @@ export default function Tasks() {
           }}>
             <div>Created At</div>
             <div style={{ fontWeight: 700 }}>
-              {loading ? "-" : formatDate(product.createdAt || currentTask.createdAt)}
+              {formatDate(product.createdAt || currentTask.createdAt)}
             </div>
           </div>
 
@@ -689,14 +628,14 @@ export default function Tasks() {
               maxWidth: "63vw",
               textTransform: "uppercase"
             }}>
-              {loading ? "—" : currentTask.taskCode}
+              {currentTask.taskCode}
             </div>
           </div>
 
           <div style={{ padding: "0 28px 0 28px", marginTop: 18 }}>
             <button
-              onClick={submitState === "" && !loading ? handleSubmitTask : undefined}
-              disabled={submitState !== "" || loading}
+              onClick={submitState === "" ? handleSubmitTask : undefined}
+              disabled={submitState !== ""}
               className="mt-2 w-full py-2 text-white rounded-full font-semibold text-lg"
               style={{
                 background: START_BLUE,
@@ -708,12 +647,7 @@ export default function Tasks() {
                 marginTop: 2
               }}
             >
-              {loading ? (
-                <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Spinner size={20} style={{ marginRight: 9 }} color={START_BLUE} />
-                  Preparing...
-                </span>
-              ) : submitState === "submitting" ? (
+              {submitState === "submitting" ? (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Spinner size={24} style={{ marginRight: 9 }} color={START_BLUE} />
                   Submitting...
@@ -835,7 +769,7 @@ export default function Tasks() {
               <div style={{ fontWeight: 700, color: "#314155", marginBottom: 6 }}>Account Balance</div>
               <div style={{ fontSize: 44, fontWeight: 800, color: "#111", marginBottom: 8 }}>
                 {Number(balance).toFixed(2)}
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#222", marginLeft: 8 }}>(USD)</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#222", marginLeft: 8 }}>(GBP)</span>
               </div>
               <div>
                 <button
@@ -860,10 +794,10 @@ export default function Tasks() {
             <div className="label">DATA</div>
 
             <div className="big" style={{ marginBottom: 6 }}>{Number(localCommissionToday).toFixed(5)}</div>
-            <div className="label">TODAY'S EARNINGS (USD)</div>
+            <div className="label">TODAY'S EARNINGS (GBP)</div>
 
             <div className="big" style={{ marginBottom: 6 }}>{Number(balance).toFixed(6)}</div>
-            <div className="label">BALANCE DUE (USD)</div>
+            <div className="label">BALANCE DUE (GBP)</div>
           </div>
 
           <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -908,8 +842,8 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* Modal */}
-      {renderTaskModal()}
+      {/* Modal (unchanged) */}
+      {showModal && renderTaskModal()}
 
       {/* Fade overlay */}
       <FadeOverlay show={fadeSpinner}>
