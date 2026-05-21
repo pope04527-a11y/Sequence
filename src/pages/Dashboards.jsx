@@ -561,9 +561,9 @@ export default function Dashboards() {
           <div className="dashboard-welcome-credibility-row">
             <span className="dashboard-welcome-credibility-label">Credibility</span>
             <div className="dashboard-welcome-progress-bar" aria-hidden="true" style={{ marginLeft: 8, marginRight: 8, flex: 1 }}>
-              <div className="dashboard-welcome-progress" style={{ width: `${Math.max(0, Math.min(100, Number(credibilityPercent || 100)))}%`, background: "#1f8fc0", height: 8, borderRadius: 6 }}></div>
+              <div className="dashboard-welcome-progress" style={{ width: `${Math.max(0, Math.min(72, Number(credibilityPercent || 72)))}%`, background: "#1f8fc0", height: 8, borderRadius: 6 }}></div>
             </div>
-            <span className="dashboard-welcome-progress-text">{Math.max(0, Math.min(100, Number(credibilityPercent || 100)))}%</span>
+            <span className="dashboard-welcome-progress-text">{Math.max(0, Math.min(72, Number(credibilityPercent || 72)))}%</span>
           </div>
         </div>
 
