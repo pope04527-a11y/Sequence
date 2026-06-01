@@ -1,4 +1,4 @@
-// src/pages/Dashboards.jsx
+// src/pages/Dashboards.js
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -18,7 +18,7 @@ import { useBalance } from "../context/balanceContext";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 
 /*
-  Dashboards.jsx — Updated to use server-side registeredWorkingDays and signState.
+  Dashboards.js — Updated to use server-side registeredWorkingDays and signState.
   - Uses POST /api/sign-in to persist sign-in on the backend so sign-in state syncs across devices.
   - Uses Europe/London day boundary for "today" so behaviour is timezone-consistent.
   - Falls back to computing sets from local task records if server data is absent.
@@ -26,6 +26,7 @@ import { useTaskRecords } from "../context/TaskRecordsContext";
     the dashboard refreshes its profile and task-records immediately (no manual page refresh).
   - Also listens for BroadcastChannel messages and custom 'profile:refresh' events so updates
     (for example credit score changes) propagate immediately across tabs and within the same tab.
+  - Robust credit/credibility extraction: accepts multiple field names and string forms like "100%".
 */
 
 const vipConfig = {
@@ -436,6 +437,38 @@ export default function Dashboards() {
   const { balance, commissionToday, vipLevel, refreshProfile, userProfile } = useBalance();
   const { records, fetchTaskRecords } = useTaskRecords();
 
+  // Debug: log profile changes so we can see what keys the backend returns
+  useEffect(() => {
+    console.debug('[Dashboards] userProfile changed:', userProfile);
+  }, [userProfile]);
+
+  // Robust extraction of credibility/creditScore from multiple possible fields/formats.
+  // Returns a number between 0 and 100. Defaults to 100 when nothing parsable found.
+  const credibilityPercent = useMemo(() => {
+    if (!userProfile) return 100;
+    const tryKeys = ['creditScore', 'credit_score', 'credibility', 'credibilityPercent', 'credit', 'credibility_percent'];
+    for (const k of tryKeys) {
+      const v = userProfile[k];
+      if (typeof v !== 'undefined' && v !== null) {
+        // handle "100%" or "100" or numeric
+        const n = Number(String(v).replace('%', '').trim());
+        if (!Number.isNaN(n)) {
+          return Math.max(0, Math.min(100, n));
+        }
+      }
+    }
+    // Try some nested fallbacks commonly used
+    try {
+      const nested = (userProfile.profile && (userProfile.profile.creditScore || userProfile.profile.credit_score))
+        || (userProfile.data && (userProfile.data.credit || userProfile.data.creditScore));
+      if (nested !== undefined && nested !== null) {
+        const nn = Number(String(nested).replace('%','').trim());
+        if (!Number.isNaN(nn)) return Math.max(0, Math.min(100, nn));
+      }
+    } catch (e) {}
+    return 100;
+  }, [userProfile]);
+
   // display name
   const displayName =
     (userProfile && (userProfile.fullName || userProfile.username || userProfile.name)) ||
@@ -454,10 +487,7 @@ export default function Dashboards() {
     ? userProfile.tier
     : `VIP${vipLevel || (userProfile && userProfile.vipLevel) || 1}`;
 
-  const credibilityPercent =
-    (userProfile && (userProfile.credibility || userProfile.credibilityPercent)) ||
-    100;
-
+  // Use credibilityPercent computed above (already a 0..100 number)
   const frozenAmount = (userProfile && (userProfile.frozenAmount || userProfile.frozen)) || 0;
 
   // compute todays completed tasks (original logic — still used to show DATA and as fallback)
@@ -610,9 +640,10 @@ export default function Dashboards() {
           <div className="dashboard-welcome-credibility-row">
             <span className="dashboard-welcome-credibility-label">Credibility</span>
             <div className="dashboard-welcome-progress-bar" aria-hidden="true" style={{ marginLeft: 8, marginRight: 8, flex: 1 }}>
-              <div className="dashboard-welcome-progress" style={{ width: `${Math.max(0, Math.min(72, Number(credibilityPercent || 72)))}%`, background: "#1f8fc0", height: 8, borderRadius: 6 }}></div>
+              {/* Use full 0..100 scale for the progress bar */}
+              <div className="dashboard-welcome-progress" style={{ width: `${Math.max(0, Math.min(100, Number(credibilityPercent || 100)))}%`, background: "#1f8fc0", height: 8, borderRadius: 6 }}></div>
             </div>
-            <span className="dashboard-welcome-progress-text">{Math.max(0, Math.min(72, Number(credibilityPercent || 72)))}%</span>
+            <span className="dashboard-welcome-progress-text">{Math.max(0, Math.min(100, Number(credibilityPercent || 100)))}%</span>
           </div>
         </div>
 
