@@ -24,6 +24,8 @@ import { useTaskRecords } from "../context/TaskRecordsContext";
   - Falls back to computing sets from local task records if server data is absent.
   - Listens for the global 'userProfileLoaded' event and storage changes so that after login
     the dashboard refreshes its profile and task-records immediately (no manual page refresh).
+  - Also listens for BroadcastChannel messages and custom 'profile:refresh' events so updates
+    (for example credit score changes) propagate immediately across tabs and within the same tab.
 */
 
 const vipConfig = {
@@ -524,10 +526,18 @@ export default function Dashboards() {
       }
     };
 
-    // storage event in case login just wrote token/currentUser
+    // storage event in case login just wrote token/currentUser or profile updates from other tabs
     const onStorage = async (ev) => {
       if (!ev) return;
-      if (ev.key === "token" || ev.key === "authToken" || ev.key === "currentUser") {
+      const key = ev.key;
+      // react to keys that indicate profile or auth changes
+      if (
+        key === "token" ||
+        key === "authToken" ||
+        key === "currentUser" ||
+        key === "userProfile" ||
+        key === "__profile_update_bump"
+      ) {
         try {
           if (typeof refreshProfile === "function") await refreshProfile();
         } catch (err) {}
@@ -537,12 +547,51 @@ export default function Dashboards() {
       }
     };
 
+    // custom event used within same tab to indicate profile updates
+    const onProfileRefreshEvent = async () => {
+      try {
+        if (typeof refreshProfile === "function") await refreshProfile();
+      } catch (err) {}
+      try {
+        if (typeof fetchTaskRecords === "function") await fetchTaskRecords();
+      } catch (err) {}
+    };
+
+    // BroadcastChannel for cross-tab same-origin messaging (fast)
+    let bc;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        bc = new BroadcastChannel("app_channel");
+        bc.onmessage = (ev) => {
+          try {
+            const msg = ev.data;
+            if (!msg) return;
+            if (msg.type === "profile_updated" || msg.type === "user_updated") {
+              // refresh authoritative profile & records
+              if (typeof refreshProfile === "function") refreshProfile().catch(() => {});
+              if (typeof fetchTaskRecords === "function") fetchTaskRecords().catch(() => {});
+            }
+          } catch (e) {
+            // ignore
+          }
+        };
+      }
+    } catch (e) {
+      // BroadcastChannel may not be available — ignore
+      bc = null;
+    }
+
     window.addEventListener("userProfileLoaded", onUserProfileLoaded);
     window.addEventListener("storage", onStorage);
+    window.addEventListener("profile:refresh", onProfileRefreshEvent);
 
     return () => {
       window.removeEventListener("userProfileLoaded", onUserProfileLoaded);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("profile:refresh", onProfileRefreshEvent);
+      if (bc) {
+        try { bc.close(); } catch (e) {}
+      }
     };
   }, [refreshProfile, fetchTaskRecords]);
 
