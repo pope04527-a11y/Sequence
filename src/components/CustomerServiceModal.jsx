@@ -14,7 +14,7 @@ export default function CustomerServiceModal({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
     // Fixed fetch URL and added timestamp to avoid caching
-    fetch("service/service-links.json?ts=" + Date.now())
+    fetch("https://sequence-cs-chat.onrender.com/service-links.json?ts=" + Date.now())
       .then((res) => res.json())
       .then((data) => {
         setLinks({
