@@ -7,7 +7,8 @@ import csImage from "../assets/images/Cs.jpg";
 export default function CustomerServiceModal({ open, onClose }) {
   const [links, setLinks] = useState({
     telegram1: "",
-    telegram2: "",
+    // Directly include the requested Telegram link as a fallback / authoritative link
+    telegram2: "https://t.me/Sequencecom",
     customerService: "",
   });
 
@@ -19,12 +20,13 @@ export default function CustomerServiceModal({ open, onClose }) {
       .then((data) => {
         setLinks({
           telegram1: data.telegram1 || "",
-          telegram2: data.telegram2 || "",
+          // Keep the hardcoded Telegram link here so the Telegram button always opens the requested link
+          telegram2: "https://t.me/Sequencecom",
           customerService: data.whatsapp || "",
         });
       })
       .catch(() => {
-        setLinks({ telegram1: "", telegram2: "", customerService: "" });
+        setLinks({ telegram1: "", telegram2: "https://t.me/Sequencecom", customerService: "" });
       });
   }, [open]);
 
@@ -135,7 +137,7 @@ export default function CustomerServiceModal({ open, onClose }) {
             {arrowIcon}
           </button>
 
-          {/* Telegram 2 */}
+          {/* Telegram 2 (now opens https://t.me/Sequencecom) */}
           <button
             onClick={() => {
               if (links.telegram2) {
